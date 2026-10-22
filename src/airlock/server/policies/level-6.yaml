@@ -1,0 +1,13 @@
+# © https://github.com/YouFoundTheDev | 2026
+# level-6.yaml
+
+id: level-6
+title: Everything on
+teaches: The secret does not leave in any encoding. Open bounty.
+strict: true
+checks:
+  - residue
+  - phrasing
+  - fence
+  - grant
+  - spill

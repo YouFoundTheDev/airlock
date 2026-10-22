@@ -1,0 +1,10 @@
+# © https://github.com/YouFoundTheDev | 2026
+# level-3.yaml
+
+id: level-3
+title: Scored phrasing
+teaches: Instruction-shaped prose is caught where it is copied, and paraphrase walks straight past it.
+strict: true
+checks:
+  - residue
+  - phrasing

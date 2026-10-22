@@ -1,0 +1,11 @@
+# © https://github.com/YouFoundTheDev | 2026
+# level-4.yaml
+
+id: level-4
+title: Fenced content
+teaches: External content is fenced with a nonce it cannot forge.
+strict: true
+checks:
+  - residue
+  - phrasing
+  - fence

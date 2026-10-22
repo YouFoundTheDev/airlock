@@ -1,0 +1,12 @@
+# © https://github.com/YouFoundTheDev | 2026
+# level-5.yaml
+
+id: level-5
+title: Granted capabilities
+teaches: The model proposes, the engine grants. Taint cannot be cleared.
+strict: true
+checks:
+  - residue
+  - phrasing
+  - fence
+  - grant

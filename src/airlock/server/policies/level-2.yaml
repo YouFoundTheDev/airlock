@@ -1,0 +1,9 @@
+# © https://github.com/YouFoundTheDev | 2026
+# level-2.yaml
+
+id: level-2
+title: Residue only
+teaches: Hidden text is reported, and reporting alone stops nothing.
+strict: false
+checks:
+  - residue

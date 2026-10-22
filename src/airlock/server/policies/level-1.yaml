@@ -1,0 +1,8 @@
+# © https://github.com/YouFoundTheDev | 2026
+# level-1.yaml
+
+id: level-1
+title: No firewall
+teaches: The unprotected baseline. The agent obeys anything it reads.
+strict: false
+checks: []
