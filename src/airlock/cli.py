@@ -7,12 +7,13 @@ import argparse
 import sys
 from collections.abc import Sequence
 
-from airlock import __version__, config
-from airlock.context import Context, Origin, Trust
-from airlock.firewall import Firewall
-from airlock.policy import Policy
-from airlock.tools import AgentReply
-from airlock.verdict import Decision, Verdict
+from airlock import __version__
+from airlock.capability import Reply
+from airlock.contract import Contract
+from airlock.engine import Engine
+from airlock.envelope import Envelope, Provenance, Source
+from airlock.ruling import Outcome, Ruling
+from airlock.settings import CLI, RULE_MUTED
 
 
 def _read(text: str | None) -> str:
@@ -23,96 +24,93 @@ def _read(text: str | None) -> str:
     return sys.stdin.read()
 
 
-def _context(text: str, trust: str) -> Context:
-    ctx = Context()
-    if trust == Trust.SYSTEM:
-        return ctx.system(text)
-    if trust == Trust.USER:
-        return ctx.user(text)
-    return ctx.data(
+def _envelope(text: str, provenance: str) -> Envelope:
+    envelope = Envelope()
+
+    if provenance == Provenance.INSTRUCTION:
+        return envelope.instruction(text)
+    if provenance == Provenance.REQUEST:
+        return envelope.request(text)
+
+    return envelope.content(
         text,
-        origin = Origin(
-            channel = config.CLI_DEFAULT_CHANNEL,
-            ref = config.CLI_DEFAULT_REF,
+        source = Source(
+            channel = CLI.default_channel,
+            ref = CLI.default_ref,
         ),
     )
 
 
-def _report(verdict: Verdict) -> None:
+def _report(outcome: Outcome) -> None:
     print(
-        config.CLI_VERDICT_LINE.format(
-            decision = str(verdict.decision).upper(),
-            elapsed = verdict.elapsed_ms,
-            policy = verdict.policy_id,
+        CLI.ruling_line.format(
+            ruling = str(outcome.ruling).upper(),
+            took = outcome.took_ms,
+            contract = outcome.contract_id,
         )
     )
 
-    fired = [
-        finding for finding in verdict.findings
-        if finding.rule != config.RULE_LAYER_DISABLED
-    ]
+    fired = [alert for alert in outcome.alerts if alert.rule != RULE_MUTED]
     if not fired:
-        print(config.CLI_NO_FINDINGS)
+        print(CLI.quiet)
         return
 
-    for finding in fired:
+    for alert in fired:
         print(
-            config.CLI_FINDING_LINE.format(
-                mark = (
-                    config.CLI_INVARIANT_MARK
-                    if finding.invariant else config.CLI_SCORED_MARK
-                ),
-                layer = finding.layer,
-                rule = finding.rule,
-                severity = finding.severity.name,
+            CLI.alert_line.format(
+                mark = CLI.hard_mark if alert.hard else CLI.soft_mark,
+                check = alert.check,
+                rule = alert.rule,
+                weight = alert.weight.name,
             )
         )
 
 
-def _status(verdict: Verdict) -> int:
-    return 1 if verdict.decision is Decision.BLOCK else 0
+def _status(outcome: Outcome) -> int:
+    return 1 if outcome.ruling is Ruling.REFUSE else 0
 
 
-def _inspect(args: argparse.Namespace) -> int:
+def _scan(args: argparse.Namespace) -> int:
     text = _read(args.text)
     if not text:
-        print(config.CLI_EMPTY_INPUT, file = sys.stderr)
+        print(CLI.empty_input, file = sys.stderr)
         return 2
 
-    firewall = Firewall(Policy(strict_data = not args.lenient))
-    verdict = firewall.inspect(_context(text, args.trust))
+    engine = Engine(Contract(strict = not args.lenient))
+    outcome = engine.inspect(_envelope(text, args.provenance))
 
-    _report(verdict)
-    if args.trust == Trust.DATA:
-        print(config.CLI_INGRESS_CAVEAT, file = sys.stderr)
-    return _status(verdict)
+    _report(outcome)
+    if args.provenance == CLI.default_provenance:
+        print(CLI.phrasing_caveat, file = sys.stderr)
+    return _status(outcome)
 
 
-def _egress(args: argparse.Namespace) -> int:
+def _release(args: argparse.Namespace) -> int:
     text = _read(args.text)
     if not text:
-        print(config.CLI_EMPTY_INPUT, file = sys.stderr)
+        print(CLI.empty_input, file = sys.stderr)
         return 2
 
-    policy = Policy(
-        canaries = tuple(args.canary),
-        allowed_hosts = tuple(args.allow_host),
+    engine = Engine(
+        Contract(
+            secrets = tuple(args.secret),
+            hosts = tuple(args.allow_host),
+        )
     )
-    firewall = Firewall(policy)
-    verdict = firewall.inspect_egress(
-        AgentReply(text = text),
-        Context().user(""),
+    outcome = engine.authorize(
+        Reply(body = text),
+        Envelope().request(""),
     )
 
-    _report(verdict)
-    return _status(verdict)
+    _report(outcome)
+    return _status(outcome)
 
 
 def _bench(args: argparse.Namespace) -> int:
     try:
         from bench.runner import format_report, run, run_ablation
     except ImportError:
-        print(config.CLI_BENCH_UNAVAILABLE, file = sys.stderr)
+        print(CLI.bench_unavailable, file = sys.stderr)
         return 2
 
     print(format_report(run(), run_ablation()))
@@ -127,19 +125,11 @@ def _serve(factory: str, host: str, port: int) -> int:
 
 
 def _proxy(args: argparse.Namespace) -> int:
-    return _serve(
-        "airlock.proxy.app:build_app",
-        args.host,
-        args.port,
-    )
+    return _serve("airlock.server.chat:build_app", args.host, args.port)
 
 
 def _arena(args: argparse.Namespace) -> int:
-    return _serve(
-        "airlock.arena.app:build_arena",
-        args.host,
-        args.port,
-    )
+    return _serve("airlock.server.arena:build_arena", args.host, args.port)
 
 
 def _text_argument(parser: argparse.ArgumentParser) -> None:
@@ -151,86 +141,95 @@ def _text_argument(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def _serve_command(
+    sub: argparse._SubParsersAction[argparse.ArgumentParser],
+    name: str,
+    help_text: str,
+    port: int,
+    run: object,
+) -> None:
+    parser = sub.add_parser(name, help = help_text)
+    parser.add_argument("--host", default = CLI.default_host)
+    parser.add_argument("--port", type = int, default = port)
+    parser.set_defaults(run = run)
+
+
 def build_parser() -> argparse.ArgumentParser:
     """
     Build the argument parser, which is also the only place the
     command surface is described
     """
     parser = argparse.ArgumentParser(
-        prog = config.CLI_PROGRAM,
-        description = config.CLI_DESCRIPTION,
-        epilog = config.CLI_EPILOG,
+        prog = CLI.program,
+        description = CLI.description,
+        epilog = CLI.epilog,
     )
     parser.add_argument(
         "--version",
         action = "version",
-        version = f"{config.CLI_PROGRAM} {__version__}",
+        version = f"{CLI.program} {__version__}",
     )
     sub = parser.add_subparsers(dest = "command", required = True)
 
-    inspect = sub.add_parser(
-        "inspect",
+    scan = sub.add_parser(
+        "scan",
         help = "inspect text on the way in to a model",
     )
-    _text_argument(inspect)
-    inspect.add_argument(
-        "--trust",
-        choices = config.CLI_TRUST_CHOICES,
-        default = config.CLI_DEFAULT_TRUST,
-        help = "provenance of the text; this decides the verdict",
+    _text_argument(scan)
+    scan.add_argument(
+        "--provenance",
+        choices = CLI.provenance_choices,
+        default = CLI.default_provenance,
+        help = "where the text came from; this decides the outcome",
     )
-    inspect.add_argument(
+    scan.add_argument(
         "--lenient",
         action = "store_true",
-        help = "score instruction-shaped text instead of blocking it",
+        help = "score instruction-shaped prose instead of refusing it",
     )
-    inspect.set_defaults(run = _inspect)
+    scan.set_defaults(run = _scan)
 
-    egress = sub.add_parser(
-        "egress",
+    release = sub.add_parser(
+        "release",
         help = "inspect model output on the way out",
     )
-    _text_argument(egress)
-    egress.add_argument(
-        "--canary",
+    _text_argument(release)
+    release.add_argument(
+        "--secret",
         action = "append",
         default = [],
-        help = "a secret that must not leave, in any encoding",
+        help = "a value that must not leave, in any encoding",
     )
-    egress.add_argument(
+    release.add_argument(
         "--allow-host",
         action = "append",
         default = [],
         help = "permitted host; a leading dot covers subdomains",
     )
-    egress.set_defaults(run = _egress)
+    release.set_defaults(run = _release)
 
     bench = sub.add_parser(
         "bench",
-        help = "run the benchmark and the per-layer ablation",
+        help = "run the benchmark and the per-check ablation",
     )
     bench.set_defaults(run = _bench)
 
-    proxy = sub.add_parser(
+    serve = sub.add_parser("serve", help = "run one of the HTTP servers")
+    serving = serve.add_subparsers(dest = "server", required = True)
+    _serve_command(
+        serving,
         "proxy",
-        help = "serve the OpenAI-compatible proxy",
+        "serve the [OI]-compatible proxy",
+        CLI.proxy_port,
+        _proxy,
     )
-    proxy.add_argument("--host", default = config.CLI_DEFAULT_HOST)
-    proxy.add_argument(
-        "--port",
-        type = int,
-        default = config.CLI_PROXY_PORT,
+    _serve_command(
+        serving,
+        "arena",
+        "serve the arena",
+        CLI.arena_port,
+        _arena,
     )
-    proxy.set_defaults(run = _proxy)
-
-    arena = sub.add_parser("arena", help = "serve the arena")
-    arena.add_argument("--host", default = config.CLI_DEFAULT_HOST)
-    arena.add_argument(
-        "--port",
-        type = int,
-        default = config.CLI_ARENA_PORT,
-    )
-    arena.set_defaults(run = _arena)
 
     return parser
 
