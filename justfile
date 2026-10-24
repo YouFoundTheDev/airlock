@@ -70,4 +70,4 @@ bypasses-export dest="bypasses.jsonl":
         cat /var/lib/airlock/bypasses.jsonl > {{dest}}
 
 harvest source="bypasses.jsonl" root="bench/corpus":
-    uv run python -m airlock.arena.harvest {{source}} {{root}}
+    uv run python -m airlock.server.harvest {{source}} {{root}}

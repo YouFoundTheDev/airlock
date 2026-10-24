@@ -10,220 +10,244 @@
                                |
               declares provenance explicitly
                                |
-                               v
-    +--------------------------------------------------+
-    |                    Context                        |
-    |  spans: (SYSTEM, "you are support")               |
-    |         (USER,   "where is my order")             |
-    |         (DATA,   "<ticket body>", origin=...)     |
-    |  nonce: a3f9c1e0d47b2856   per request, CSPRNG    |
-    |  tainted_by: derived from spans, never set        |
-    +--------------------------------------------------+
-                               |
-                    firewall.inspect(ctx)
-                               |
-          +--------------------+--------------------+
-          |                    |                    |
-     normalize             ingress             provenance
-     (reports)            (scored)            (invariant)
-          |                    |                    |
-          +--------------------+--------------------+
-                               |
-                     escalate() then decide()
-                               |
-                          Verdict  ---- BLOCK? stop here
-                               |
-                       firewall.render(ctx)
+                        Envelope
                                |
               +----------------+----------------+
-              | <<<UNTRUSTED-a3f9c1e0d47b2856   |
-              |   ...content verbatim...        |
-              | <<<END-a3f9c1e0d47b2856>>>      |
-              +----------------+----------------+
-                               |
-                        THE MODEL (untrusted)
-                               |
-                          AgentReply
-                     text + tool_calls
-                               |
-                firewall.inspect_egress(reply, ctx)
-                               |
-                    +----------+----------+
-                    |                     |
-                toolauth               egress
-               (invariant)           (invariant)
-                    |                     |
-                    +----------+----------+
-                               |
-                            decide()
-                               |
-                            Verdict
+              |                                 |
+        engine.inspect()                 engine.compose()
+        residue, phrasing, fence                 |
+              |                          rendered prompt
+        Outcome  ---- REFUSE? stop               |
+              |                                 v
+              |                            +---------+
+              |                            |  model  |
+              |                            +----+----+
+              |                                 |
+              |                          Reply (prose + proposals)
+              |                                 |
+              |                        engine.authorize()
+              |                        grant, spill
+              |                                 |
+              +----------->  Outcome  <----------+
+                          permit / refuse
 ```
 
-Two inspection points, not one. `inspect()` runs before the model. `inspect_egress()` runs after. They share the decision algebra and nothing else.
+Two inspection points, not one. `inspect()` runs before the model. `authorize()`
+runs after. They share the decision algebra and nothing else.
 
-## Component breakdown
+## Module map
 
-| Module | Responsibility | Reads payload meaning? |
+| Module | Owns | Decides? |
 |---|---|---|
-| `context.py` | The trust-tagged prompt. Taint derivation | n/a |
-| `verdict.py` | `Severity`, `Decision`, `Finding`, `Verdict` | n/a |
-| `policy.py` | Which layers run, thresholds, `escalate()`, `decide()` | n/a |
-| `firewall.py` | Orchestration, fencing, fail-closed wrapping | n/a |
-| `normalize/unicode.py` | Tag block, zero-width, bidi, confusables, NFKC | reads bytes, decides nothing |
-| `normalize/unwrap.py` | Transport decoding, whole-span and embedded | reads bytes, decides nothing |
-| `normalize/views.py` | The bounded closure over reversible readings | shared by three layers |
-| `layers/normalize.py` | Emits findings for every transform required | no |
-| `layers/ingress.py` | Template markers, instruction-shaped text | **yes, and it is labelled** |
-| `layers/provenance.py` | Nonce presence in DATA | no |
-| `layers/toolauth.py` | Taint, guards, effects, argument schema | no |
-| `layers/egress.py` | Canary closure, URL host control | no |
-| `tools.py` | `Effect`, `Guard`, `Tool`, `ToolCallRequest`, `AgentReply` | n/a |
-| `audit.py` | JSONL records carrying no attacker content | n/a |
-| `agent/mock.py` | The deliberately gullible model | n/a |
-| `proxy/` | OpenAI-compatible surface, inferred provenance | n/a |
-| `arena/` | Six levels, sessions, limits, bypass capture | n/a |
-
-One row is doing something different from all the others, and that is the design.
+| `envelope.py` | The provenance-tagged prompt. Exposure derivation | n/a |
+| `ruling.py` | `Weight`, `Ruling`, `Alert`, `Outcome` | n/a |
+| `contract.py` | Which checks run, thresholds, `promote()`, `resolve()` | n/a |
+| `engine.py` | Orchestration, wrapping, fail-closed handling | yes, from alerts |
+| `capability.py` | `Impact`, `Requirement`, `Capability`, `Proposal`, `Reply` | n/a |
+| `codec/surface.py` | Tag block, zero-width, bidi, lookalikes, NFKC | reads bytes, decides nothing |
+| `codec/peel.py` | Transport decoding, whole-body and inline | reads bytes, decides nothing |
+| `codec/spectrum.py` | The bounded closure over reversible readings | shared by three checks |
+| `checks/residue.py` | Emits alerts for every transform required | no |
+| `checks/phrasing.py` | Template tokens, instruction-shaped prose | **yes, and it is labelled** |
+| `checks/fence.py` | Nonce presence in external content | no |
+| `checks/grant.py` | Exposure, requirements, denied impacts, schema | no |
+| `checks/spill.py` | Secret closure, host control | no |
+| `journal.py` | JSONL records carrying no attacker content | n/a |
+| `agents/scripted.py` | The deliberately gullible model | n/a |
+| `server/` | Arena, proxy, levels, sessions, harvest | n/a |
 
 ## The data model
 
-### Trust is a closed set
+### Provenance
+
+`Provenance` has three values: `INSTRUCTION`, `REQUEST`, `CONTENT`.
+
+- `INSTRUCTION` is text the operator wrote. It is never inspected by the
+  residue or phrasing checks, because the operator is inside the trust boundary.
+- `REQUEST` is text the human at the keyboard wrote. It is inspected for
+  residue but not for phrasing, because "ignore that" from a user is a normal
+  sentence about their own conversation.
+- `CONTENT` is everything else, and it must carry a `Source`. It is the only
+  provenance that can trigger the phrasing rule, and the only one that exposes
+  the envelope.
+
+A `Segment` enforces this at construction: a `CONTENT` segment without a source
+raises, and an `INSTRUCTION` or `REQUEST` segment with one also raises. The type
+cannot represent an unlabelled document.
+
+### Envelope
+
+`Envelope` is frozen, and every builder method returns a new instance, so an
+envelope cannot be mutated out from under an outcome that already described it.
 
 ```python
-class Trust(StrEnum):
-    SYSTEM = "system"   # you wrote it
-    USER   = "user"     # the human at the keyboard wrote it
-    DATA   = "data"     # something on the internet wrote it
+@dataclass(frozen = True, slots = True)
+class Envelope:
+    segments: tuple[Segment, ...] = ()
+    nonce: str = field(default_factory = fresh_nonce)
+
+    @property
+    def exposed(self) -> tuple[Source, ...]:
+        return tuple(
+            segment.source for segment in self.segments
+            if segment.provenance is Provenance.CONTENT
+            and segment.source is not None
+        )
 ```
 
-Three levels, not a number. A numeric trust score invites arithmetic, and there is no meaningful sense in which two USER spans equal one SYSTEM span.
+Exposure is derived, never stored. There is no `taint()` setter and no
+`clear_taint()` method, because both would let the flag disagree with the
+segments.
 
-### A span cannot be malformed
+### Alerts name themselves
 
 ```python
-@model_validator(mode = "after")
-def _origin_matches_trust(self) -> Self:
-    if self.trust is Trust.DATA and self.origin is None:
-        raise ValueError("a DATA span must declare its origin")
-    if self.trust is not Trust.DATA and self.origin is not None:
-        raise ValueError(f"a {self.trust} span cannot have an origin")
-    return self
+Alert(check = "fence", rule = "fence-forged",
+      weight = Weight.CRITICAL, hard = True,
+      segment = 2, evidence = "fence nonce present in content")
 ```
 
-Untrusted content without a stated source is not representable. You cannot forget to say where a document came from, because the constructor refuses.
-
-### Taint is derived, not stored
-
-Covered in `01-CONCEPTS.md`, and it is worth restating as an architectural property: there is **no setter**. `tainted_by` is a `@property` computed from the spans. The class of bug where a flag and reality disagree cannot occur, because there is only one representation.
-
-`Context` is frozen and every builder method returns a new instance, so a context cannot be mutated out from under a verdict that already described it.
-
-### Findings name themselves
-
-```python
-Finding(layer = "provenance", rule = "nonce-forgery",
-        severity = Severity.CRITICAL, invariant = True,
-        span_index = 2, evidence = "fence nonce present in DATA")
-```
-
-Every finding carries its layer and rule so a consumer can render `BLOCKED by provenance/nonce-forgery`. This is not cosmetic. The arena's entire teaching mechanism is that the player sees which rule stopped them, so verdict legibility is a hard requirement rather than a nicety.
-
-`evidence` is **derived from attacker content** and is treated as hostile throughout. It never reaches the audit log un-digested.
+Every alert carries its check and rule so a consumer can render
+`refused by fence/fence-forged`. This is not cosmetic. The arena's entire
+teaching mechanism is that the player sees which rule stopped them, so ruling
+legibility is a hard requirement rather than a nicety.
 
 ## The decision algebra
 
+Two pure functions over alerts, both in `contract.py`.
+
 ```
-escalate(findings, policy):
-    strict_data off  ->  unchanged
-    strict_data on   ->  data-imperative and chat-template-marker
-                         become invariant
+promote(alerts, contract):
+  if contract.strict:
+    every alert whose rule is in STRICT_RULES becomes hard
+  return alerts
 
-decide(findings, policy):
-    any invariant                      ->  BLOCK
-    max scored severity >= threshold   ->  BLOCK
-    otherwise                          ->  ALLOW
+resolve(alerts, contract):
+  if any alert is hard: REFUSE
+  scored = [a.weight for a in alerts if not a.hard and a.weight > INFO]
+  if scored and max(scored) >= contract.threshold: REFUSE
+  return PERMIT
 ```
 
-Three properties worth naming.
+Four rules hold this together:
 
-**Invariants are not thresholded.** No policy setting disables one. `block_threshold` only ever moves the bar for scored findings.
+**Hard alerts are not thresholded.** No contract setting disables one.
+`threshold` only ever moves the bar for soft alerts.
 
-**INFO never blocks.** `decide()` filters `severity > Severity.INFO` out of the scored comparison. This exists so `layer-disabled` notices can ride along in every verdict without ever affecting it.
+**INFO never refuses.** `resolve()` filters `weight > Weight.INFO` out of the
+scored comparison. This exists so `check-muted` notices can ride along in every
+outcome without ever affecting it.
 
-**Escalation is a pure function over findings, not a layer.** The original design had the provenance layer re-emit ingress findings as invariant. That would require one layer to receive another layer's output, which breaks the uniform `inspect(ctx, policy)` shape that lets the orchestrator wrap all layers identically. Making it a function that the `Firewall` applies during orchestration keeps the `Layer` protocol clean.
+**Promotion is a pure function over alerts, not a check.** An earlier design had
+the fence check re-emit phrasing alerts as hard. That would require one check to
+receive another check's output, which breaks the uniform `run(envelope, contract)`
+shape that lets the engine wrap all checks identically.
 
-## Fail-closed
+**The two kinds are never blended.** A contract can raise or lower `threshold`
+all it likes; it cannot turn a guess into a guarantee, because the field that
+decides is `hard`, not the number.
 
-Every layer call is wrapped:
+## The check protocol
 
 ```python
-def _run(self, name: str, ctx: Context) -> list[Finding]:
+class InboundCheck(Protocol):
+    name: str
+
+    def run(
+        self,
+        envelope: Envelope,
+        contract: Contract,
+    ) -> list[Alert]:
+        ...
+```
+
+A check reports. It does not refuse, log, or call another check. That is what
+makes the fail-closed wrapper possible: the engine can wrap every check the same
+way because none of them can do anything except return a list.
+
+`grant` and `spill` are outbound and do not fit this protocol, because they read
+a `Reply` rather than an `Envelope`. The engine calls them from `authorize()`
+with their own signatures.
+
+## Failure modes fail closed
+
+Every inbound check call is wrapped:
+
+```python
+def _run(self, name: str, envelope: Envelope) -> list[Alert]:
     if not self._enabled(name):
-        return [self._disabled(name)]
+        return [self._muted(name)]
+
     try:
-        return self.layers[name].inspect(ctx, self.policy)
+        return self.inbound[name].run(envelope, self.contract)
     except Exception as error:
-        return [self._layer_error(name, error)]
+        return [self._fault(name, error)]
 ```
 
-An exception becomes `Finding(rule="layer-error", severity=CRITICAL, invariant=True)`, which forces BLOCK. A firewall that fails open on an unhandled exception is worse than no firewall, because it reports success while doing nothing.
+An exception becomes `Alert(rule="check-fault", weight=CRITICAL, hard=True)`,
+which forces `REFUSE`. A firewall that fails open on an unhandled exception is
+worse than no firewall, because it reports success while doing nothing.
 
-Note the bare `except Exception`. That is deliberate and it is the one place in this codebase where catching everything is correct: the point is that *no* failure mode reaches the model.
+**A muted check is recorded, not silent.** `check-muted` at INFO weight enters
+the outcome, so a consumer can always distinguish "this check ran and found
+nothing" from "this check never ran". The arena uses exactly this to tell a
+player that level 2 was winnable because a check was off, not because the attack
+was clever.
 
-`evidence` is `type(error).__name__` and never the exception message, because messages can contain the input that caused them.
+## The checks
 
-**A disabled layer is recorded, not silent.** `layer-disabled` at INFO severity enters the verdict, so a consumer can always distinguish "this layer ran and found nothing" from "this layer never ran". The arena uses exactly this to tell a player that level 2 was winnable because a layer was off, not because the attack was clever.
+### residue
 
-## Threat model
+Runs `flatten()` then `peel()` over every segment the operator did not author,
+forwarding every alert each stage produced. It never decides anything: an
+unedited text with a tag-block payload produces a `HIGH` alert, and whether that
+refuses is the contract's business.
 
-**Defended.** An attacker who controls the content of an untrusted span the agent will read: a ticket, a retrieved document, a web page, a tool result, an email body, a filename. This is the realistic and overwhelmingly common case.
+### phrasing
 
-**Defended, partially and honestly.** An attacker who controls the user turn and is talking the agent out of its constraints, to the extent that egress and tool authorization hold. Ingress catches the naive attempts and misses the good ones. That is stated rather than hidden.
+The scored check. Two rules, both scoped to `Provenance.CONTENT`:
 
-**Not defended.** An attacker who controls the system prompt, the policy file, the model weights, or the firewall process. Outside the trust boundary by construction.
+- `template-token` at `HIGH`
+- `instructional-prose` at `MODERATE`
 
-**Explicitly assumed hostile: the model.** The firewall never trusts model output, model-declared intent, or model compliance. The system prompt does tell the model that DATA spans are inert, because it raises attack cost, and that instruction is documented as **not a control**.
+It reads a bounded spectrum of readings, not the raw string, because base64 and
+separator tricks are cheap. It is the only check that can be wrong about a
+payload, and the only one whose alerts are promoted by `strict`.
 
-## Defense in depth, and what each layer actually buys
+### fence
 
-```
-attack class            normalize  ingress  provenance  toolauth  egress
-----------------------  ---------  -------  ----------  --------  ------
-role override                        X
-delimiter forgery                    X
-nonce forgery                                    X
-unicode smuggling           X        X
-encoded payload             X        X
-embedded encoded            X        X
-indirect injection                   X
-tool coercion                                              X
-tool arg smuggling                                         X
-unconfirmed spend                                          X
-encoded exfiltration                                                X
-url exfiltration                                                    X
-```
+Compares the envelope's nonce against every reading of every external segment.
+`alnum_only` on both sides means a nonce interrupted by separators still counts.
+A hit is `CRITICAL` and hard, because attacker text has no legitimate route to a
+value drawn from the CSPRNG after the text arrived.
 
-The benchmark reports this as a **two-number ablation**: what each layer catches alone, and what it adds to the full stack. Those are different questions.
+### grant
 
-`normalize` scores solo 10, marginal 0. A single leave-one-out number would call it inert and delete it. It is not inert, it is **alibied**: `ingress` normalizes internally for its own matching, so in the full stack it covers normalization completely. Turn `ingress` off, as arena level 2 does, and those 10 cases are the only thing standing between a player and an invisible payload.
+For each proposal in a reply:
 
-A layer with **both** numbers at zero is inert and gets deleted. The suite fails if that ever happens.
+1. Look it up. An undeclared capability is refused.
+2. Refuse any impact the contract denies.
+3. Refuse missing required arguments, undeclared arguments, and schema failures.
+4. Refuse `UNTAINTED` capabilities when the envelope is exposed.
+5. Refuse `CONFIRMED` capabilities that were not confirmed.
+6. Refuse `ALLOWLISTED` capabilities whose allowlisted argument is absent or
+   off-list.
 
-## Configuration
+Every one of those is hard. There is no threshold at which an unauthorized
+action becomes acceptable.
 
-Every constant lives in `config.py`. Not most of them. All of them, including the regex fragments the imperative patterns are assembled from and the codepoint tuples the Unicode sets are built out of. There are no magic numbers or strings anywhere else in the package.
+### spill
 
-`config.py` is also pure ASCII by construction. The Unicode sets are built from integer codepoints rather than written as literals:
+Two mechanisms over the outbound surfaces (prose plus every proposal argument
+flattened to text):
 
-```python
-ZERO_WIDTH_CODEPOINTS: Final = (0x200B, 0x200C, 0x200D, 0x2060, 0xFEFF)
-ZERO_WIDTH_CHARS: Final = frozenset(chr(p) for p in ZERO_WIDTH_CODEPOINTS)
-```
+- Secret matching over the closure of readings, so a secret survives no encoding
+  the closure can undo.
+- Host allowlisting by exact match or `.suffix` match, applied to every URL the
+  regex finds, including markdown images and protocol-relative forms.
 
-A config file about invisible characters that itself contains invisible characters is a file nobody can review.
-
-`Policy` is the runtime knob: which layers are enabled, the block threshold, `strict_data`, the canary list, the host allowlist, and forbidden effects. Arena levels are YAML files loaded into `Policy` instances.
+A surface larger than 64 KiB is refused before matching, because scanning it
+would be both slow and a bypass opportunity.
 
 ## Storage
 
@@ -232,23 +256,28 @@ Almost nothing, deliberately.
 | What | Where | Why |
 |---|---|---|
 | Sessions | in memory, LRU + TTL | The arena is a demo, not an account system |
-| Audit records | JSONL at `AIRLOCK_AUDIT_PATH`, disabled by default | No path means no records, which is the right default |
+| Journal records | JSONL at `AIRLOCK_AUDIT_PATH`, disabled by default | No path means no records, which is the right default |
 | Bypass payloads | JSONL at `AIRLOCK_BYPASS_PATH` | So `just harvest` has something to read |
 | Corpus | YAML in the repo | Reviewed by hand, never written by the application |
 
-The core library performs **no I/O at all**. No network, no filesystem, no clock reads beyond elapsed-time measurement. That is what makes it testable and what makes the arena safe to expose.
+The core library performs **no I/O at all**. No network, no filesystem, no clock
+reads beyond elapsed-time measurement. That is what makes it testable and what
+makes the arena safe to expose.
 
-### The audit record carries no attacker content
+### The journal record carries no attacker content
 
 ```json
-{"policy_id":"level-6","decision":"block","elapsed_ms":0.027,
- "spans":[{"trust":"data","origin":"ticket:ab15089d7d9114ef"}],
- "findings":[{"layer":"ingress","rule":"data-imperative",
-              "severity":"MEDIUM","invariant":false,
-              "span_index":2,"evidence_digest":"3081bc7f2caf4077"}]}
+{"contract_id":"level-6","ruling":"refuse","took_ms":0.027,
+ "segments":[{"provenance":"content","source":"ticket:ab15089d7d9114ef"}],
+ "alerts":[{"check":"phrasing","rule":"instructional-prose",
+            "weight":"MODERATE","hard":true,"segment":2,
+            "evidence_digest":"3081bc7f2caf4077"}]}
 ```
 
-Both `evidence` and the origin `ref` are digested. Evidence is derived from span text, and in proxy mode the origin ref comes straight out of the request body, so both are attacker-influenced. A log the operator considers safe to keep must not become a place attacker content is stored.
+Both `evidence` and the source `ref` are digested. Evidence is derived from
+segment text, and in proxy mode the source ref comes straight out of the request
+body, so both are attacker-influenced. A log the operator considers safe to keep
+must not become a place attacker content is stored.
 
 ## Deployment
 
@@ -268,72 +297,65 @@ Both `evidence` and the origin `ref` are digested. Evidence is derived from span
               |  cap_drop: ALL                   |
               |  no-new-privileges               |
               |  tmpfs /tmp                      |
-              |  volume /var/lib/airlock   |
+              |  volume /var/lib/airlock         |
               |  cpus 1.0, memory 512M           |
               +----------------------------------+
 ```
 
-The API container is never published to the host. Only nginx binds a port, and it binds to `127.0.0.1`.
+The API container is never published to the host. Only nginx binds a port, and it
+binds to `127.0.0.1`.
 
-**Ports are configurable high numbers, never defaults.** UI `33572`, dev UI `61878`, proxy `39441`. Binding a well-known port is how you collide with whatever else the operator is already running.
+**Ports are configurable high numbers, never defaults.** UI `33572`, dev UI
+`61878`, proxy `39441`. Binding a well-known port is how you collide with
+whatever else the operator is already running.
 
-**The container image bakes the virtualenv and the entrypoint calls `uvicorn` directly.** An earlier version ran `uv run uvicorn` at container start, which re-resolves the environment on every boot and, more importantly, needs a writable cache. Under `read_only: true` it restart-looped on `Could not create temporary file`. No test could have caught that, because the suite never starts a container.
+**The container image bakes the virtualenv and the entrypoint calls `uvicorn`
+directly.** An earlier version ran `uv run uvicorn` at container start, which
+re-resolves the environment on every boot and, more importantly, needs a
+writable cache. Under `read_only: true` it restart-looped on `Could not create
+temporary file`. No test could have caught that, because the suite never starts
+a container.
 
-**Dev and prod are namespace-isolated by construction.** Project names and container names are structural literals, one set per compose file, never variables. Each compose recipe passes its own env file explicitly. There is nothing to switch between environments and therefore nothing to forget.
+**Dev and prod are namespace-isolated by construction.** Project names and
+container names are structural literals, one set per compose file, never
+variables. Each compose recipe passes its own env file explicitly. There is
+nothing to switch between environments and therefore nothing to forget.
 
-## Design decisions
+## The proxy is the weak mode
 
-**Library first, proxy second.** The proxy is a convenience wrapper where provenance is inferred and therefore weaker. Building the proxy first would have made the weak mode the default mode.
+`server/chat.py` exposes `/v1/chat/completions` and infers provenance from
+message roles:
 
-**A deterministic mock agent as the default backend.** Because the firewall never inspects the model, firewall behavior is identical whether the backend is the mock, a local model, or a hosted API. The mock makes failures unambiguous: if the secret leaks, the firewall failed, and "the model was having an off day" is not available as an explanation. It also runs in CI, offline, free, with no flakiness.
+| Role | Provenance | Why |
+|---|---|---|
+| `system`, `developer` | `INSTRUCTION` | Operator text, inside the boundary |
+| `user`, `assistant` | `REQUEST` | Human text; a prior assistant turn is re-read as semi-trusted |
+| `tool`, `function` | `CONTENT` | Tool output is external, and gets a source |
+| anything else | `CONTENT` | Fails closed rather than being promoted |
 
-**The caller declares provenance.** This is the one piece of work the API pushes onto you and it is not an oversight. It is the only honest way to know what is untrusted, and the API is shaped so the declaration is unavoidable: `Context.data()` requires an `Origin`.
+Two consequences, documented everywhere they are used:
 
-**Arena levels are configurations, not difficulties.** Level 3 is not "harder", it is "provenance is on now". A player who beats level 2 learns that normalization plus ingress is not enough, which is a true and useful thing to learn. Difficulty tuning would have taught nothing.
+- Retrieved content pasted into a `user` message is seen as `REQUEST`, so
+  phrasing does not fire on it. The hard checks still hold, because they do not
+  depend on the role.
+- Mapping a prior assistant turn to `CONTENT` would expose every conversation
+  after the first turn and make authorization useless in proxy mode, so it does
+  not.
 
-**Normalization is a `Layer`, not a loose pre-pass.** The fail-closed contract has to cover it, and the uniform shape is what lets the orchestrator wrap all three request-side layers identically. The cost is that `ingress` normalizes again internally, so that work happens twice. That is deliberate: layer independence is a property the tests check directly, and sharing a cached shadow would couple them.
+The startup log, the README, and a test all assert that this warning is printed.
+A limitation that is not announced is a lie by omission.
 
-## Performance
+## Threat model
 
-```
-p50   0.53 ms
-p99   3.09 ms
-```
+**Inside the boundary:** the operator's instructions, the contract, the
+capability registry, the engine code, the process.
 
-The dominant cost is the bounded closure in `normalize/views.py`, which `ingress`, `provenance`, and `egress` all use. It is budgeted twice: `MAX_VARIANT_ROUNDS` bounds depth, and a per-caller variant cap bounds breadth. `egress` gets 96 readings, `ingress` and `provenance` get 24, because ingress runs on every request and egress runs on model output.
+**Outside the boundary:** any text that reaches a `CONTENT` segment, the model
+itself, anything the model claims to have read.
 
-That closure is why p99 is three milliseconds rather than a quarter of one. Before it was applied to ingress, p50 was 0.05 ms and an encoded payload embedded in prose walked straight through. The cost buys a real class of detection and it is stated rather than hidden.
+**Consequences:** an attacker who controls a `CONTENT` segment can make the model
+say or propose anything. They cannot make the engine grant a capability the
+contract denies, make a registered secret leave in a form the closure can undo,
+or forge a nonce drawn after their text arrived.
 
-Both directions are bounded. `MAX_NORMALIZE_BYTES` caps decoder input at 256 KiB. `MAX_EGRESS_BYTES` caps outbound scanning at 64 KiB, per string and in aggregate across a reply, and exceeding it is an **invariant BLOCK**. Refusing to scan an outbound message is not a reason to release it.
-
-## Extensibility
-
-**A new scored rule** goes in `ingress.py` with its pattern in `config.py`, plus benign corpus cases. If it cannot survive the benign corpus it does not ship.
-
-**A new invariant layer** implements the `Layer` protocol, registers in `LAYER_ORDER`, and needs a benchmark class of its own so the ablation can prove it is load-bearing.
-
-**A new tool guard** adds a `Guard` member, a rule constant in `TOOLAUTH_INVARIANT_RULES`, and a branch in `_guard_findings`. There is a structural test that fails if a `Guard` member exists with no rule behind it, which exists because `USER_CONFIRMED` was declared and read nowhere for eleven milestones.
-
-**A new backend** implements `Agent`, which is one method: `respond(prompt) -> AgentReply`.
-
-## Limitations
-
-- **Ingress is incomplete by construction.** Not a bug, a category.
-- **Proxy provenance is inferred and wrong for most RAG applications.** Pasted retrieval reads as USER.
-- **A prior assistant turn maps to USER, not DATA.** Mapping it to DATA would taint every conversation after turn one and make tool authorization useless in proxy mode. A payload that survived an earlier turn is re-read as semi-trusted, and that is a real weakness recorded here rather than discovered later.
-- **There is no sanitizing mode.** The design originally specified a third decision, `SANITIZE`, that would send normalized text to the model instead of the original. It was declared and never implemented, and writing these docs is what surfaced that: `Decision.SANITIZE` and `Verdict.sanitized` existed for eleven milestones with zero producers anywhere in the codebase. Both were deleted rather than left in place, because a public enum member reads as a shipped capability. The design's own reasoning argues against building it: normalization must never silently rewrite a user's legitimate content, which is the whole reason the layer reports instead of deciding. **Original text is what reaches the model, always.**
-- **Sessions are in-process.** Two arena replicas do not share state.
-
-## Comparison
-
-| | This | Guardrail libraries | LLM-as-judge | Fine-tuned classifier |
-|---|---|---|---|---|
-| Survives paraphrase | invariant layers yes, ingress no | no | no | partly |
-| Needs a model | no | usually no | **yes** | yes |
-| Itself injectable | no | no | **yes** | no |
-| Runs offline | yes | yes | no | with weights |
-| Stops tool misuse | yes | rarely | no | no |
-| Stops exfiltration | yes | sometimes | no | no |
-| Honest about limits | this is the point | varies | rarely | rarely |
-
-The row that matters is the last one. Most tools in this space report a detection rate and no false-positive rate, or report both against a corpus they wrote. This one reports the false-positive rate on the hard class, on its own line, and tells you in its own output not to quote the detection number.
+That is the whole claim. Everything else in this document is in service of it.
