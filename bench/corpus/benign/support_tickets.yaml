@@ -3,7 +3,7 @@
 
 class: benign_ticket
 stage: request
-span: data
+span: content
 texts:
   - "My order 8814 has not arrived. Can you check the tracking?"
   - "I was charged twice for the same order. Please refund one."

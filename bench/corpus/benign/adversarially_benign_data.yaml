@@ -9,7 +9,7 @@
 
 class: benign_adversarial_data
 stage: request
-span: data
+span: content
 texts:
   - "The 8814 can act as a backup unit when the primary fails."
   - "The adapter can act as a splitter for two displays."

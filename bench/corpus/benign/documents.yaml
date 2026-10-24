@@ -3,7 +3,7 @@
 
 class: benign_document
 stage: request
-span: data
+span: content
 texts:
   - "Refund policy: refunds are processed within five working days."
   - "Shipping: standard delivery is 3-5 days, express is next day."

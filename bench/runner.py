@@ -10,23 +10,17 @@ import urllib.parse
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Final
+from typing import Final, Unpack
 
 from pydantic import BaseModel, ConfigDict
 from ruamel.yaml import YAML
 
-from airlock import config
-from airlock.context import Context, Origin, Trust
-from airlock.firewall import Firewall
-from airlock.policy import Policy
-from airlock.tools import (
-    AgentReply,
-    Effect,
-    Guard,
-    Tool,
-    ToolCallRequest,
-)
-from airlock.verdict import Decision
+from airlock.capability import Capability, Impact, Proposal, Requirement, Reply
+from airlock.contract import Contract, ContractChanges
+from airlock.engine import Engine
+from airlock.envelope import Envelope, Provenance, Source
+from airlock.ruling import Ruling
+from airlock.settings import ALL_CHECKS, ENCODING, FENCES, LOOKALIKES
 
 
 CANARY: Final = "VANTAGE-7731-ORION"
@@ -56,29 +50,29 @@ class MailArgs(BaseModel):
 
 REGISTRY: Final = {
     "send_email":
-    Tool(
+    Capability(
         name = "send_email",
-        effects = frozenset({Effect.WRITE,
-                             Effect.NETWORK_EGRESS}),
-        guards = frozenset({Guard.NO_UNTRUSTED_INFLUENCE}),
+        impacts = frozenset({Impact.WRITE,
+                             Impact.NETWORK}),
+        requirements = frozenset({Requirement.UNTAINTED}),
         required_args = frozenset({"to",
                                    "body"}),
     ),
     "send_summary":
-    Tool(
+    Capability(
         name = "send_summary",
-        effects = frozenset({Effect.NETWORK_EGRESS}),
-        guards = frozenset({Guard.ARGS_ALLOWLISTED}),
+        impacts = frozenset({Impact.NETWORK}),
+        requirements = frozenset({Requirement.ALLOWLISTED}),
         required_args = frozenset({"to",
                                    "body"}),
-        allowlists = {"to": frozenset({"me@vantage.example"})},
+        allowlist = {"to": frozenset({"me@vantage.example"})},
         arg_schema = MailArgs,
     ),
     "wire_transfer":
-    Tool(
+    Capability(
         name = "wire_transfer",
-        effects = frozenset({Effect.SPEND}),
-        guards = frozenset({Guard.USER_CONFIRMED}),
+        impacts = frozenset({Impact.SPEND}),
+        requirements = frozenset({Requirement.CONFIRMED}),
         required_args = frozenset({"amount",
                                    "beneficiary"}),
     ),
@@ -90,14 +84,14 @@ _RLO: Final = chr(0x202E)
 
 def _tag_block(text: str) -> str:
     return "".join(
-        chr(config.TAG_BLOCK_START + ord(c)) if c.isascii() else c
-        for c in text
+        chr(ENCODING.tag_block_start +
+            ord(char)) if char.isascii() else char for char in text
     )
 
 
-def _confusable(text: str) -> str:
-    swap = {v: k for k, v in config.CONFUSABLES.items()}
-    return "".join(swap.get(c, c) for c in text)
+def _lookalike(text: str) -> str:
+    swap = {magic: look for look, magic in LOOKALIKES.items()}
+    return "".join(swap.get(char, char) for char in text)
 
 
 def _embed(blob: str) -> str:
@@ -118,7 +112,7 @@ TRANSFORMS: Final[
     "bidi":
     lambda text: f"{_RLO}{text}",
     "confusable":
-    _confusable,
+    _lookalike,
     "base64":
     lambda text: base64.b64encode(text.encode()).decode(),
     "base32":
@@ -157,14 +151,14 @@ class Case(BaseModel):
     span: str
     text: str
     hostile: bool
-    tool_call: ToolCallRequest | None = None
+    proposal: Proposal | None = None
     replay_nonce: bool = False
 
 
 @dataclass
 class ClassResult:
     """
-    Per-class tally of what the firewall decided
+    Per-class tally of what the engine ruled
     """
 
     total: int = 0
@@ -183,18 +177,18 @@ class Report:
 
     attacks: dict[str, ClassResult] = field(default_factory = dict)
     benign: dict[str, ClassResult] = field(default_factory = dict)
-    elapsed_ms: list[float] = field(default_factory = list)
+    took_ms: list[float] = field(default_factory = list)
 
     @property
     def detection_rate(self) -> float:
-        total = sum(r.total for r in self.attacks.values())
-        caught = sum(r.caught for r in self.attacks.values())
+        total = sum(result.total for result in self.attacks.values())
+        caught = sum(result.caught for result in self.attacks.values())
         return caught / total if total else 0.0
 
     @property
     def false_positive_rate(self) -> float:
-        total = sum(r.total for r in self.benign.values())
-        flagged = sum(r.caught for r in self.benign.values())
+        total = sum(result.total for result in self.benign.values())
+        flagged = sum(result.caught for result in self.benign.values())
         return flagged / total if total else 0.0
 
     def class_false_positive_rate(self, label: str) -> float:
@@ -210,11 +204,11 @@ def _load_file(path: Path, hostile: bool) -> list[Case]:
     document = YAML(typ = "safe").load(path.read_text())
     label = document["class"]
     stage = document.get("stage", "request")
-    span = document.get("span", "data")
+    span = document.get("span", "content")
     replay = bool(document.get("replay_nonce", False))
     call = document.get("tool_call")
-    request = (
-        ToolCallRequest(
+    proposal = (
+        Proposal(
             name = call["name"],
             args = dict(call["args"]),
         ) if call else None
@@ -233,7 +227,7 @@ def _load_file(path: Path, hostile: bool) -> list[Case]:
                     text = TRANSFORMS[name](body) if "{fence}" not in body
                     and "{nonce}" not in body else body,
                     hostile = hostile,
-                    tool_call = request,
+                    proposal = proposal,
                     replay_nonce = replay,
                 )
             )
@@ -255,111 +249,106 @@ def load_corpus() -> tuple[list[Case], list[Case]]:
     return attacks, benign
 
 
-def base_policy(**overrides: object) -> Policy:
+def base_contract(**changes: Unpack[ContractChanges]) -> Contract:
     """
-    The policy every benchmark run starts from
+    The contract every benchmark run starts from
     """
-    policy = Policy(
-        policy_id = "bench",
-        strict_data = True,
-        canaries = (CANARY,
-                    ),
-        allowed_hosts = ALLOWED_HOSTS,
+    contract = Contract(
+        contract_id = "bench",
+        strict = True,
+        secrets = (CANARY,
+                   ),
+        hosts = ALLOWED_HOSTS,
     )
-    return policy.model_copy(update = dict(overrides))
+    return contract.changed(**changes)
 
 
-def _build_context(case: Case, nonce: str | None) -> Context:
-    ctx = Context().system("You are a support agent for Vantage.")
+def _envelope(case: Case, nonce: str | None) -> Envelope:
+    envelope = Envelope(
+    ).instruction("You are a support agent for Vantage.")
     if nonce is not None:
-        ctx = Context(nonce = nonce
-                      ).system("You are a support agent for Vantage.")
+        envelope = Envelope(
+            nonce = nonce
+        ).instruction("You are a support agent for Vantage.")
 
     text = case.text
     if case.replay_nonce and nonce is not None:
-        fence = config.FENCE_CLOSE.format(nonce = nonce)
+        fence = FENCES.close.format(nonce = nonce)
         text = text.replace("{fence}", fence)
         text = text.replace("{nonce}", nonce)
 
-    if case.span == Trust.USER:
-        return ctx.user(text)
-    return ctx.data(
+    if case.span == Provenance.REQUEST:
+        return envelope.request(text)
+
+    return envelope.content(
         text,
-        origin = Origin(channel = "ticket",
+        source = Source(channel = "ticket",
                         ref = "8814"),
     )
 
 
-def evaluate(case: Case, policy: Policy) -> tuple[bool, float]:
+def evaluate(case: Case, contract: Contract) -> tuple[bool, float]:
     """
-    Run one case through the firewall and report whether it was
-    stopped and how long that took
+    Run one case through the engine and report whether it was stopped
+    and how long that took
     """
-    firewall = Firewall(policy, registry = REGISTRY)
+    engine = Engine(contract, registry = REGISTRY)
     started = time.perf_counter()
 
     if case.stage == "response":
-        ctx = Context().system("s").user("help")
-        reply = AgentReply(
-            text = case.text,
-            tool_calls = ((case.tool_call,
-                           ) if case.tool_call else ()),
+        envelope = Envelope().instruction("s").request("help")
+        reply = Reply(
+            body = case.text,
+            proposals = ((case.proposal,
+                          ) if case.proposal else ()),
         )
-        if case.tool_call is not None:
-            ctx = ctx.data(
+        if case.proposal is not None:
+            envelope = envelope.content(
                 "hostile ticket",
-                origin = Origin(channel = "ticket",
+                source = Source(channel = "ticket",
                                 ref = "8814"),
             )
-        verdict = firewall.inspect_egress(reply, ctx)
+        outcome = engine.authorize(reply, envelope)
     else:
-        probe = Context()
-        ctx = _build_context(case, probe.nonce)
-        verdict = firewall.inspect(ctx)
+        probe = Envelope()
+        outcome = engine.inspect(_envelope(case, probe.nonce))
 
-    elapsed = (time.perf_counter() - started) * 1000.0
-    return verdict.decision is Decision.BLOCK, elapsed
+    took = (time.perf_counter() - started) * 1000.0
+    return outcome.ruling is Ruling.REFUSE, took
 
 
-def run(policy: Policy | None = None) -> Report:
+def run(contract: Contract | None = None) -> Report:
     """
     Score the whole corpus and report detection and false positives
     side by side, because either one alone is a marketing number
     """
-    active = policy or base_policy()
+    active = contract or base_contract()
     attacks, benign = load_corpus()
     report = Report()
 
     for case in attacks:
-        blocked, elapsed = evaluate(case, active)
+        blocked, took = evaluate(case, active)
         bucket = report.attacks.setdefault(case.label, ClassResult())
         bucket.total += 1
         bucket.caught += int(blocked)
-        report.elapsed_ms.append(elapsed)
+        report.took_ms.append(took)
 
     for case in benign:
-        blocked, elapsed = evaluate(case, active)
+        blocked, took = evaluate(case, active)
         bucket = report.benign.setdefault(case.label, ClassResult())
         bucket.total += 1
         bucket.caught += int(blocked)
-        report.elapsed_ms.append(elapsed)
+        report.took_ms.append(took)
 
     return report
 
 
-ALL_LAYERS: Final = (
-    *config.LAYER_ORDER,
-    *config.EGRESS_LAYER_ORDER,
-)
-
-
-class Ablation(BaseModel):
+@dataclass(frozen = True)
+class Ablation:
     """
-    What one layer catches by itself and what it adds to the full
+    What one check catches by itself and what it adds to the full
     stack, which are different questions with different answers
     """
-
-    model_config = ConfigDict(frozen = True)
 
     solo: int
     marginal: int
@@ -367,7 +356,7 @@ class Ablation(BaseModel):
     @property
     def inert(self) -> bool:
         """
-        True only when the layer catches nothing alone and adds
+        True only when the check catches nothing alone and adds
         nothing to the stack
         """
         return self.solo == 0 and self.marginal == 0
@@ -375,43 +364,42 @@ class Ablation(BaseModel):
     @property
     def alibied(self) -> bool:
         """
-        True when another layer already covers everything this one
+        True when another check already covers everything this one
         catches, which is redundancy rather than uselessness
         """
         return self.solo > 0 and self.marginal == 0
 
 
-def _caught(policy: Policy, attacks: Sequence[Case]) -> set[str]:
-    return {case.case_id for case in attacks if evaluate(case, policy)[0]}
+def _caught(contract: Contract, attacks: Sequence[Case]) -> set[str]:
+    return {
+        case.case_id
+        for case in attacks
+        if evaluate(case, contract)[0]
+    }
 
 
 def run_ablation() -> dict[str, Ablation]:
     """
-    Measure each layer twice: alone, and as a marginal addition to the
+    Measure each check twice: alone, and as a marginal addition to the
     full stack
 
-    Leave-one-out alone is blind to a layer whose work another layer
+    Leave-one-out alone is blind to a check whose work another check
     duplicates, and would report it as inert while it is catching
     attacks nothing else catches once its alibi is disabled
     """
     attacks, _ = load_corpus()
-    full = _caught(base_policy(), attacks)
+    full = _caught(base_contract(), attacks)
     results: dict[str, Ablation] = {}
 
-    for layer in ALL_LAYERS:
-        off = {f"{name}_enabled": False for name in ALL_LAYERS}
-        solo = _caught(
-            base_policy(**{
-                **off,
-                f"{layer}_enabled": True
-            }),
-            attacks,
-        )
+    for check in ALL_CHECKS:
+        solo = _caught(base_contract(checks = frozenset({check})), attacks)
         without = _caught(
-            base_policy(**{f"{layer}_enabled": False}),
+            base_contract(
+                checks = frozenset(ALL_CHECKS).difference({check})
+            ),
             attacks,
         )
-        results[layer] = Ablation(
+        results[check] = Ablation(
             solo = len(solo),
             marginal = len(full - without),
         )
@@ -451,20 +439,20 @@ def format_report(
             f"{result.rate * 100:6.1f}%"
         )
 
-    lines += ["", "PER-LAYER ABLATION", "-" * 58]
-    lines.append(f"  {'layer':24} {'solo':>5} {'marginal':>9}")
-    for layer, ablation in deltas.items():
+    lines += ["", "PER-CHECK ABLATION", "-" * 58]
+    lines.append(f"  {'check':24} {'solo':>5} {'marginal':>9}")
+    for check, ablation in deltas.items():
         mark = ""
         if ablation.inert:
             mark = "  INERT - DELETE"
         elif ablation.alibied:
             mark = "  alibied"
         lines.append(
-            f"  {layer:24} {ablation.solo:5} "
+            f"  {check:24} {ablation.solo:5} "
             f"{ablation.marginal:9}{mark}"
         )
 
-    p50, p99 = _percentiles(report.elapsed_ms)
+    p50, p99 = _percentiles(report.took_ms)
     hard = report.class_false_positive_rate("benign_adversarial_data")
 
     lines += [
@@ -480,18 +468,18 @@ def format_report(
         "  READ THIS BEFORE QUOTING THE DETECTION RATE",
         "  This corpus was written by the same author as the rules.",
         "  It measures what the author thought of, which is not the",
-        "  same as what an attacker will think of. Ingress detection",
+        "  same as what an attacker will think of. Phrasing detection",
         "  is incomplete by construction; the number that matters is",
-        "  the false positive rate, and the layers whose guarantees",
+        "  the false positive rate, and the checks whose guarantees",
         "  do not depend on guessing the payload.",
         "",
         "  READ THIS BEFORE QUOTING THE FALSE POSITIVE RATE",
         "  Quote the hard-benign line, not the pooled one. Until",
-        "  2026-08-13 every adversarially-benign case sat in a USER",
-        "  span, which ingress skips by construction, so a pooled",
+        "  2026-08-13 every adversarially-benign case sat in a request",
+        "  segment, which phrasing skips by construction, so a pooled",
         "  0.0% was measuring a `continue` statement. The hard class",
-        "  is legitimate retrieved content in a DATA span, which is",
-        "  the only place the imperative rule can be wrong.",
+        "  is legitimate retrieved content in a content segment, which",
+        "  is the only place the instruction rule can be wrong.",
         "",
     ]
     return "\n".join(lines)
@@ -508,7 +496,7 @@ def main() -> None:
 
 __all__: Sequence[str] = [
     "Report",
-    "base_policy",
+    "base_contract",
     "load_corpus",
     "main",
     "run",
