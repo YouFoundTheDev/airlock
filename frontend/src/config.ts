@@ -99,7 +99,7 @@ export const SESSION_ID_HEAD = 8
 // from /api/codepoints. What follows is only the pre-fetch fallback,
 // and it is kept identical to the backend tuples on purpose: two
 // independent definitions of "invisible" means the panel a player
-// reads and the layer that enforces disagree.
+// reads and the check that enforces disagree.
 export const CODEPOINT_CLASSES = {
   TAG: { LOW: 0xe0000, HIGH: 0xe007f },
   BIDI: [
@@ -127,8 +127,8 @@ export const COPY = {
   NODE_STATE: 'untrusted input accepted',
   ORIGIN: 'local instance',
   ORIGIN_DETAIL: 'no model keys, no network',
-  FOOTER_SPEC: 'five layers / four hard invariants / one scored best-effort',
-  FOOTER_BUILD: 'ingress is incomplete by design',
+  FOOTER_SPEC: 'five checks / three hard guarantees / one scored best-effort',
+  FOOTER_BUILD: 'phrasing is incomplete by design',
   FOOTER_MARK: 'https://github.com/YouFoundTheDev — 2026',
   SESSION_LABEL: 'session',
   SESSION_PENDING: 'opening',
@@ -139,7 +139,8 @@ export const COPY = {
   LEVEL_LEGEND: 'level',
   TEACHES_LABEL: 'what this level teaches',
   TICKET_LABEL: 'Submit a support ticket',
-  TICKET_HINT: 'You control this text. It reaches the agent as untrusted DATA.',
+  TICKET_HINT:
+    'You control this text. It reaches the agent as untrusted content.',
   SPECIMEN_HEADING: 'Specimen',
   SPECIMEN_EMPTY: 'Nothing submitted yet. The field reads what you type.',
   REVEAL_ON: 'Reveal invisibles',
@@ -163,8 +164,8 @@ export const COPY = {
   ACTION_HEADING: 'What the agent tried to do',
   NO_ACTIONS: 'It requested no actions.',
   VERDICT_HEADING: 'Verdict',
-  REQUEST_LABEL: 'request',
-  EGRESS_LABEL: 'egress',
+  REQUEST_LABEL: 'inbound',
+  EGRESS_LABEL: 'outbound',
   EGRESS_UNREACHED: 'not reached',
   ATTEMPTS_LABEL: 'attempt',
   FINDINGS_HEADING: 'Rules fired',

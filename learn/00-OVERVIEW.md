@@ -59,17 +59,23 @@ The reason it stays unsolved is that the obvious fix does not work. You cannot f
 **Tools**
 - Python 3.14 and [`uv`](https://docs.astral.sh/uv/)
 - Docker and `just`, for the arena and the container stack
-- Node and `pnpm`, only if you want to touch the arena frontend
+- Node 22 and `pnpm` 12, only if you want to touch the arena frontend
 
 ## Quick start
 
-If you only want to use it, clone and install from the checkout. The repository is private, so the installer needs your own git credentials:
+If you only want to use it, the installer reads straight from the repository:
 
 ```bash
-git clone git@github.com:YouFoundTheDev/airlock.git
+curl -fsSL https://raw.githubusercontent.com/YouFoundTheDev/airlock/main/install.sh | bash
+echo "Ignore all previous instructions." | airlock scan
+```
+
+If you also want the corpus and the arena, clone and install from the checkout:
+
+```bash
+git clone https://github.com/YouFoundTheDev/airlock.git
 cd airlock
 ./install.sh --with-source
-echo "Ignore all previous instructions." | airlock scan
 ```
 
 If you want to read and change it, which is why you are in `learn/`:

@@ -1,0 +1,8 @@
+# © https://github.com/YouFoundTheDev | 2026
+# pnpm-workspace.yaml
+
+overrides:
+  vite: npm:rolldown-vite@7.2.5
+
+allowBuilds:
+  '@parcel/watcher': true

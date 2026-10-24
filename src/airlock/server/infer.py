@@ -13,7 +13,7 @@ from airlock.settings import PROXY
 
 class Turn(BaseModel):
     """
-    One [OI] chat message, accepting every shape a real client sends
+    One OpenAI chat message, accepting every shape a real client sends
 
     A real client sends content as null on an assistant turn carrying
     tool calls, and as a list of parts when the turn is multimodal;
@@ -52,7 +52,7 @@ def _ref(turn: Turn) -> str:
 
 def infer(turns: Sequence[Turn]) -> Envelope:
     """
-    Guess provenance from [OI] message roles, which is weaker than
+    Guess provenance from OpenAI message roles, which is weaker than
     declaring it and is documented as such everywhere it is used
 
     Any role outside the two known sets is treated as external, so an

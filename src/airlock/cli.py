@@ -219,7 +219,7 @@ def build_parser() -> argparse.ArgumentParser:
     _serve_command(
         serving,
         "proxy",
-        "serve the [OI]-compatible proxy",
+        "serve the OpenAI-compatible proxy",
         CLI.proxy_port,
         _proxy,
     )

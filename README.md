@@ -228,25 +228,25 @@ account.
 
 ## Install
 
-The repository is private, so clone it and let the installer build from the
-checkout:
-
-```bash
-git clone git@github.com:YouFoundTheDev/airlock.git
-cd airlock
-./install.sh --with-source
-```
-
-`--with-source` keeps the checkout, because the benchmark corpus and the Docker
-arena are not part of the installed tool. The installer fetches `uv` if missing,
-has `uv` provision a managed CPython 3.14 so your system Python is untouched, and
-puts an `airlock` command on your PATH.
-
-Once the repository is public, the one-liner works:
+The one-liner fetches the installer, provisions a managed CPython 3.14 with
+`uv`, and puts `airlock` on your PATH:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/YouFoundTheDev/airlock/main/install.sh | bash
 ```
+
+If you want the benchmark corpus and the Docker arena as well, clone it and
+install from the checkout:
+
+```bash
+git clone https://github.com/YouFoundTheDev/airlock.git
+cd airlock
+./install.sh --with-source
+```
+
+`--with-source` keeps the checkout, because the corpus and the arena are not
+part of the installed tool. Your system Python is never touched: `uv` provisions
+its own CPython 3.14.
 
 ## Command line
 
@@ -321,7 +321,8 @@ and `authorize` refuses a proposal it cannot justify.
 difficulty setting:
 
 ```bash
-just arena          # http://127.0.0.1:33572
+cp .env.example .env      # ports and paths, no secrets
+just arena                # http://127.0.0.1:33572
 just arena-down
 ```
 
@@ -335,7 +336,7 @@ substring check on prose reports success while the secret leaves through
 `send_email`. Sessions are rate limited per client, secrets are per session, and
 the bypass harvest is manual only.
 
-**Proxy**, [OI]-compatible, documented as the weaker mode:
+**Proxy**, OpenAI-compatible, documented as the weaker mode:
 
 ```bash
 airlock serve proxy      # http://127.0.0.1:39441
@@ -346,7 +347,7 @@ and spill checks with no code changes. Provenance here is *inferred* from
 message roles, which is wrong whenever an application pastes retrieved content
 into a user message — which is what most RAG applications do. That caveat is in
 the startup log, in this README, and in the learn docs, and a test asserts the
-warning is still printed. Refused requests return HTTP 200 in [OI] response
+warning is still printed. Refused requests return HTTP 200 in OpenAI response
 shape with `finish_reason: content_filter`, so a drop-in client does not crash.
 The contract test validates against the real `openai` client's `ChatCompletion`
 model rather than a hand-written shape, so it cannot drift.

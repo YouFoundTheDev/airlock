@@ -84,9 +84,9 @@ That made every code comment in model output a `CRITICAL` spill violation. Three
 of the benign corpus cases failed:
 
 ```
-1 finding   See https://attacker.example/c?d=1
-0 findings  See HTTPS://attacker.example/c?d=1
-0 findings  ![x](//attacker.example/p?d=1)
+1 alert     See https://attacker.example/c?d=1
+0 alerts    See HTTPS://attacker.example/c?d=1
+0 alerts    ![x](//attacker.example/p?d=1)
 ```
 
 Two separate bugs in that output. The second line is the interesting one: the
@@ -149,7 +149,7 @@ all at once.
 
 ## The proxy contract test
 
-The proxy claims to be a drop-in for an [OI]-shaped client. Claiming it is easy;
+The proxy claims to be a drop-in for an OpenAI-shaped client. Claiming it is easy;
 proving it is not, because a hand-written response shape drifts.
 
 The test validates the response against the real `openai` client's

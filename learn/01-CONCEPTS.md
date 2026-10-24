@@ -84,7 +84,7 @@ The model sees the instruction at what looks like top level. Every static delimi
 
 The bottom four share a property: **none of them require understanding the payload.** That is what makes them survive an attacker who rewrites.
 
-The top three are worth exactly what they cost, which is not nothing. This project ships the first one as a scored layer, because catching the copy-pasted attempt raises the attacker's cost. It is labelled `hard=False` in the code so that nobody mistakes it for a guarantee.
+The top three are worth exactly what they cost, which is not nothing. This project ships the first one as a scored check, because catching the copy-pasted attempt raises the attacker's cost. It is labelled `hard=False` in the code so that nobody mistakes it for a guarantee.
 
 ## Invariants versus heuristics
 
@@ -225,7 +225,7 @@ CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
 
 The gap is a scope call, `S:C` against `S:U`. Cite the vector, or cite both numbers and say who assigned which. Printing 9.3 alone as if it were uncontested is how a disputed number becomes folklore.
 
-**The lesson:** this is the shape `grant` exists for. The email was untrusted content, the agent acted on it, and the action carried data out. Taint propagation refuses that action without ever needing to decide whether the email "looked malicious."
+**The lesson:** this is the shape `grant` exists for. The email was untrusted content, the agent acted on it, and the action carried data out. Exposure tracking refuses that action without ever needing to decide whether the email "looked malicious."
 
 ### GitHub Copilot Chat, 2024 and 2025
 
@@ -235,7 +235,7 @@ The gap is a scope call, `S:C` against `S:U`. Cite the vector, or cite both numb
 
 *2025, "CamoLeak" on github.com.* Omer Mayraz of Legit Security, via HackerOne, CVSS 9.6. It bypassed the 2024 fix by routing through **GitHub's own Camo image proxy** using pre-signed URLs, base16-encoding stolen private repository content one character per image request. The fix: image rendering disabled in Copilot Chat entirely, 14 August.
 
-**The lesson is the pairing.** The 2024 fix drew a domain-trust boundary. The 2025 attack walked straight through it using the vendor's own trusted domain. Egress control that trusts a proxy is not egress control. This is why `checks/spill.py` allowlists hosts and then still checks the query string and path of allowlisted URLs against the secret matcher.
+**The lesson is the pairing.** The 2024 fix drew a domain-trust boundary. The 2025 attack walked straight through it using the vendor's own trusted domain. Spill control that trusts a proxy is not spill control. This is why `checks/spill.py` allowlists hosts and then still checks the query string and path of allowlisted URLs against the secret matcher.
 
 ## Common pitfalls
 

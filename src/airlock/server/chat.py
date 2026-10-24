@@ -29,7 +29,7 @@ _log = logging.getLogger(__name__)
 
 class ChatRequest(BaseModel):
     """
-    The subset of the [OI] chat completion request this proxy reads
+    The subset of the OpenAI chat completion request this proxy reads
     """
 
     model_config = ConfigDict(extra = "allow")
@@ -107,7 +107,7 @@ def build_app(
     journal: Journal | None = None,
 ) -> FastAPI:
     """
-    Build the [OI]-compatible proxy, announcing on the way up that
+    Build the OpenAI-compatible proxy, announcing on the way up that
     provenance here is inferred rather than declared
     """
     _log.warning(PROXY.weak_mode_warning)
