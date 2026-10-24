@@ -6,15 +6,15 @@
 import { useMemo, useState } from 'react'
 
 import { useAttempt, useCodepoints, useLevels, useSession } from '@/api/hooks'
-import type { AttemptResponse, Finding, Level } from '@/api/types'
+import type { Alert, AttemptResponse, Level } from '@/api/types'
 import {
   ARENA,
   CENSUS_MARKS,
+  CHECK_ORDER,
   COPY,
-  DECISION,
-  LAYER_ORDER,
   NUMERAL_PAD,
-  RULE_LAYER_DISABLED,
+  RULE_CHECK_MUTED,
+  RULING,
   SESSION_ID_HEAD,
   SEVERITY_MAX_WEIGHT,
   SEVERITY_SCALE_OFFSET,
@@ -35,8 +35,8 @@ function numeral(value: number): string {
   return String(value).padStart(NUMERAL_PAD, '0')
 }
 
-function severityWidth(severity: string): string {
-  const weight = SEVERITY_WEIGHT[severity as keyof typeof SEVERITY_WEIGHT] ?? 0
+function severityWidth(weighting: string): string {
+  const weight = SEVERITY_WEIGHT[weighting as keyof typeof SEVERITY_WEIGHT] ?? 0
   const span = SEVERITY_MAX_WEIGHT + SEVERITY_SCALE_OFFSET
   return `${((weight + SEVERITY_SCALE_OFFSET) / span) * 100}%`
 }
@@ -46,8 +46,8 @@ function attemptMessage(error: Error | null): string {
   return COPY.ERRORS[status as keyof typeof COPY.ERRORS] ?? COPY.ERRORS.DEFAULT
 }
 
-function firedFindings(result: AttemptResponse): Finding[] {
-  return result.findings.filter((finding) => finding.rule !== RULE_LAYER_DISABLED)
+function firedAlerts(result: AttemptResponse): Alert[] {
+  return result.alerts.filter((alert) => alert.rule !== RULE_CHECK_MUTED)
 }
 
 function LevelPlate({
@@ -69,11 +69,11 @@ function LevelPlate({
       <span className={styles.levelNumber}>{numeral(level.number)}</span>
       <span className={styles.levelTitle}>{level.title}</span>
       <span className={styles.levelBars} aria-hidden="true">
-        {LAYER_ORDER.map((layer) => (
+        {CHECK_ORDER.map((check) => (
           <span
-            key={layer}
+            key={check}
             className={styles.levelBar}
-            data-on={level.active_layers.includes(layer)}
+            data-on={level.active_checks.includes(check)}
           />
         ))}
       </span>
@@ -82,29 +82,29 @@ function LevelPlate({
 }
 
 function LayerRail({ level }: { level: Level }): React.ReactElement {
-  const off = LAYER_ORDER.filter((layer) => !level.active_layers.includes(layer))
+  const off = CHECK_ORDER.filter((check) => !level.active_checks.includes(check))
 
   return (
     <section className={styles.rail}>
-      <h2 className={styles.railHeading}>{COPY.ACTIVE_LAYERS}</h2>
+      <h2 className={styles.railHeading}>{COPY.ACTIVE_CHECKS}</h2>
       <ul className={styles.railList}>
-        {LAYER_ORDER.map((layer, index) => (
+        {CHECK_ORDER.map((check, index) => (
           <li
-            key={layer}
+            key={check}
             className={styles.railItem}
-            data-active={level.active_layers.includes(layer)}
+            data-active={level.active_checks.includes(check)}
           >
             <span className={styles.railIndex}>{numeral(index + 1)}</span>
-            <span className={styles.railName}>{layer}</span>
+            <span className={styles.railName}>{check}</span>
           </li>
         ))}
       </ul>
-      {level.active_layers.length === 0 && (
+      {level.active_checks.length === 0 && (
         <p className={styles.note} data-tone="loud">
-          {COPY.NO_ACTIVE_LAYERS}
+          {COPY.NO_ACTIVE_CHECKS}
         </p>
       )}
-      {off.length > 0 && level.active_layers.length > 0 && (
+      {off.length > 0 && level.active_checks.length > 0 && (
         <p className={styles.note}>{COPY.DISABLED_NOTICE}</p>
       )}
       {level.number === ARENA.BOUNTY_LEVEL && (
@@ -222,30 +222,30 @@ function Specimen({
   )
 }
 
-function Findings({ findings }: { findings: Finding[] }): React.ReactElement {
-  if (findings.length === 0) {
+function Findings({ alerts }: { alerts: Alert[] }): React.ReactElement {
+  if (alerts.length === 0) {
     return <p className={styles.note}>{COPY.NO_RULES}</p>
   }
 
   return (
     <ul className={styles.findings}>
-      {findings.map((finding, index) => (
+      {alerts.map((alert, index) => (
         <li
-          key={`${index}-${finding.layer}-${finding.rule}`}
+          key={`${index}-${alert.check}-${alert.rule}`}
           className={styles.finding}
-          data-invariant={finding.invariant}
+          data-hard={alert.hard}
         >
-          <span className={styles.findingLayer}>{finding.layer}</span>
-          <span className={styles.findingRule}>{finding.rule}</span>
+          <span className={styles.findingLayer}>{alert.check}</span>
+          <span className={styles.findingRule}>{alert.rule}</span>
           <span className={styles.findingTrack}>
             <span
               className={styles.findingFill}
-              style={{ width: severityWidth(finding.severity) }}
+              style={{ width: severityWidth(alert.weight) }}
             />
           </span>
-          <span className={styles.findingSeverity}>{finding.severity}</span>
+          <span className={styles.findingSeverity}>{alert.weight}</span>
           <span className={styles.findingFlag}>
-            {finding.invariant ? COPY.INVARIANT_MARK : ''}
+            {alert.hard ? COPY.HARD_MARK : ''}
           </span>
         </li>
       ))}
@@ -254,7 +254,7 @@ function Findings({ findings }: { findings: Finding[] }): React.ReactElement {
 }
 
 function Verdict({ result }: { result: AttemptResponse }): React.ReactElement {
-  const fired = firedFindings(result)
+  const fired = firedAlerts(result)
 
   return (
     <section className={styles.verdict}>
@@ -270,25 +270,25 @@ function Verdict({ result }: { result: AttemptResponse }): React.ReactElement {
           <dt className={styles.decisionKey}>{COPY.REQUEST_LABEL}</dt>
           <dd
             className={styles.decisionValue}
-            data-decision={result.request_decision}
+            data-decision={result.inbound_ruling}
           >
-            {result.request_decision}
+            {result.inbound_ruling}
           </dd>
         </div>
         <div className={styles.decision}>
           <dt className={styles.decisionKey}>{COPY.EGRESS_LABEL}</dt>
           <dd
             className={styles.decisionValue}
-            data-decision={result.egress_decision ?? DECISION.ALLOW}
-            data-unreached={result.egress_decision === null}
+            data-decision={result.outbound_ruling ?? RULING.PERMIT}
+            data-unreached={result.outbound_ruling === null}
           >
-            {result.egress_decision ?? COPY.EGRESS_UNREACHED}
+            {result.outbound_ruling ?? COPY.EGRESS_UNREACHED}
           </dd>
         </div>
       </dl>
 
       <h3 className={styles.subHeading}>{COPY.FINDINGS_HEADING}</h3>
-      <Findings findings={fired} />
+      <Findings alerts={fired} />
 
       <div className={styles.seal} data-escaped={result.secret_escaped}>
         <span className={styles.sealLabel}>{COPY.SECRET_LABEL}</span>
@@ -300,14 +300,14 @@ function Verdict({ result }: { result: AttemptResponse }): React.ReactElement {
       <section className={styles.agent}>
         <h3 className={styles.subHeading}>{COPY.AGENT_HEADING}</h3>
         <pre className={styles.agentText}>
-          {result.agent_text || COPY.AGENT_EMPTY}
+          {result.reply_text || COPY.AGENT_EMPTY}
         </pre>
         <h3 className={styles.subHeading}>{COPY.ACTION_HEADING}</h3>
-        {result.tool_calls.length === 0 ? (
+        {result.proposals.length === 0 ? (
           <p className={styles.note}>{COPY.NO_ACTIONS}</p>
         ) : (
           <ul className={styles.actions}>
-            {result.tool_calls.map((call, index) => (
+            {result.proposals.map((call, index) => (
               <li key={`${index}-${call.name}`} className={styles.action}>
                 <span className={styles.actionName}>{call.name}</span>
                 <span className={styles.actionArgs}>{call.args.join(', ')}</span>

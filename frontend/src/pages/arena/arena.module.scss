@@ -547,7 +547,7 @@
 
   text-transform: lowercase;
 
-  &[data-decision='block'] {
+  &[data-decision='refuse'] {
     color: $color-signal;
   }
 
@@ -598,7 +598,7 @@
   height: 100%;
   background-color: $color-ink;
 
-  [data-invariant='true'] & {
+  [data-hard='true'] & {
     background-color: $color-signal;
   }
 }

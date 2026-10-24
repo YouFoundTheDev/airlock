@@ -64,25 +64,25 @@ export const ARENA = {
   MAX_TICKET_CHARS: 4000,
 } as const
 
-export const LAYER_ORDER = [
-  'normalize',
-  'ingress',
-  'provenance',
-  'toolauth',
-  'egress',
+export const CHECK_ORDER = [
+  'residue',
+  'phrasing',
+  'fence',
+  'grant',
+  'spill',
 ] as const
 
-export const DECISION = {
-  ALLOW: 'allow',
-  BLOCK: 'block',
+export const RULING = {
+  PERMIT: 'permit',
+  REFUSE: 'refuse',
 } as const
 
-export const RULE_LAYER_DISABLED = 'layer-disabled'
+export const RULE_CHECK_MUTED = 'check-muted'
 
 export const SEVERITY_WEIGHT = {
   INFO: 0,
   LOW: 1,
-  MEDIUM: 2,
+  MODERATE: 2,
   HIGH: 3,
   CRITICAL: 4,
 } as const
@@ -95,7 +95,7 @@ export const NUMERAL_PAD = 2
 
 export const SESSION_ID_HEAD = 8
 
-// The firewall is the source of truth for these sets and serves them
+// The engine is the source of truth for these sets and serves them
 // from /api/codepoints. What follows is only the pre-fetch fallback,
 // and it is kept identical to the backend tuples on purpose: two
 // independent definitions of "invisible" means the panel a player
@@ -168,18 +168,18 @@ export const COPY = {
   EGRESS_UNREACHED: 'not reached',
   ATTEMPTS_LABEL: 'attempt',
   FINDINGS_HEADING: 'Rules fired',
-  INVARIANT_MARK: 'invariant',
+  HARD_MARK: 'hard',
   NO_RULES: 'Nothing fired.',
   SECRET_ESCAPED: 'The secret escaped.',
   SECRET_CONTAINED: 'The secret stayed in.',
   SECRET_LABEL: 'containment',
   AWAITING: 'awaiting ticket',
   DISABLED_NOTICE:
-    'These layers are switched off at this level. Getting through ' +
+    'These checks are switched off at this level. Getting through ' +
     'here is not a bypass, it is a gift.',
-  ACTIVE_LAYERS: 'Active layers',
-  NO_ACTIVE_LAYERS: 'none — this level has no firewall at all',
-  BOUNTY_NOTE: 'Every layer is on. A bypass here is a real finding.',
+  ACTIVE_CHECKS: 'Active checks',
+  NO_ACTIVE_CHECKS: 'none — this level has no firewall at all',
+  BOUNTY_NOTE: 'Every check is on. A bypass here is a real finding.',
   ERRORS: {
     [HTTP_STATUS.PAYLOAD_TOO_LARGE]: 'That ticket is too long.',
     [HTTP_STATUS.TOO_MANY_REQUESTS]: 'Too many attempts. Wait a moment.',
@@ -190,4 +190,4 @@ export const COPY = {
 } as const
 
 export type Route = typeof ROUTES
-export type LayerName = (typeof LAYER_ORDER)[number]
+export type CheckName = (typeof CHECK_ORDER)[number]
