@@ -14,7 +14,7 @@
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com)
 [![OWASP](https://img.shields.io/badge/OWASP-LLM01%3A2025-000000?style=flat)](https://genai.owasp.org)
 [![Checks](https://img.shields.io/badge/checks-5-6D4AFF?style=flat)](#the-five-checks)
-[![Hard](https://img.shields.io/badge/hard%20guarantees-4-6D4AFF?style=flat)](#what-is-guaranteed)
+[![Hard](https://img.shields.io/badge/hard%20guarantees-3-6D4AFF?style=flat)](#what-is-guaranteed)
 [![Scored](https://img.shields.io/badge/scored%20checks-1-orange?style=flat)](#the-check-that-guesses)
 [![Detection](https://img.shields.io/badge/detection-100%25%20%2F%2012%20classes-4457E8?style=flat)](#scoreboard)
 [![FPR](https://img.shields.io/badge/hard--benign%20FPR-5.0%25-orange?style=flat)](#scoreboard)
@@ -29,8 +29,8 @@ defender who bets on reading it loses to the first competent paraphrase.
 Instead airlock wraps the untrusted model in structural checks that hold
 whether or not anyone understands the payload.
 
-Four of those checks are hard guarantees. One is a scored heuristic, labelled
-as such everywhere it appears.
+Three of those checks are hard guarantees. One reports and decides nothing.
+One is a scored heuristic, labelled as such everywhere it appears.
 
 ---
 
