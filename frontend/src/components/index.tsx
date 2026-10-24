@@ -1,4 +1,4 @@
 /**
- * © https://github.com/YouFoundTheDev | 2025
+ * © https://github.com/YouFoundTheDev | 2026
  * index.tsx
  */
