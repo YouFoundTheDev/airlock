@@ -237,6 +237,24 @@ def test_one_sessions_secret_never_appears_in_anothers_result() -> None:
     assert secret not in second_text
 
 
+def test_a_known_session_can_be_checked_without_spending_an_attempt() -> None:
+    store = Sessions()
+    client = _client(store)
+    session_id = _session(client)
+
+    response = client.get(f"/api/session/{session_id}")
+    session = store.get(session_id)
+
+    assert response.status_code == 200
+    assert response.json()["session_id"] == session_id
+    assert session is not None
+    assert session.attempts == 0
+
+
+def test_an_unknown_session_check_is_refused() -> None:
+    assert _client().get("/api/session/nope").status_code == 404
+
+
 def test_an_oversized_payload_is_refused() -> None:
     client = _client()
     session_id = _session(client)

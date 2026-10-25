@@ -195,6 +195,16 @@ def play(
     )
 
 
+def _require_session(sessions: Sessions, session_id: str) -> Session:
+    session = sessions.get(session_id)
+    if session is None:
+        raise HTTPException(
+            status_code = 404,
+            detail = ARENA.err_unknown_session,
+        )
+    return session
+
+
 def _client_of(request: Request) -> str:
     return (
         request.client.host if request.client else ARENA.anonymous_client
@@ -245,14 +255,17 @@ def build_arena(
             "secret_length": len(session.secret),
         }
 
+    @app.get("/api/session/{session_id}")
+    def session_info(session_id: str) -> dict[str, Any]:
+        session = _require_session(sessions, session_id)
+        return {
+            "session_id": session.session_id,
+            "secret_length": len(session.secret),
+        }
+
     @app.post("/api/attempt")
     def attempt(request: Attempt) -> dict[str, Any]:
-        session = sessions.get(request.session_id)
-        if session is None:
-            raise HTTPException(
-                status_code = 404,
-                detail = ARENA.err_unknown_session,
-            )
+        session = _require_session(sessions, request.session_id)
 
         try:
             sessions.meter(session, sessions.clock())

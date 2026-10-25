@@ -18,7 +18,7 @@
 [![Scored](https://img.shields.io/badge/scored%20checks-1-orange?style=flat)](#the-check-that-guesses)
 [![Detection](https://img.shields.io/badge/detection-100%25%20%2F%2012%20classes-4457E8?style=flat)](#scoreboard)
 [![FPR](https://img.shields.io/badge/hard--benign%20FPR-5.0%25-orange?style=flat)](#scoreboard)
-[![Tests](https://img.shields.io/badge/tests-337-8B5CF6?style=flat)](#development)
+[![Tests](https://img.shields.io/badge/tests-339-8B5CF6?style=flat)](#development)
 [![License: AGPLv3](https://img.shields.io/badge/License-AGPL_v3-purple.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 ![The airlock arena at level 6: a ticket is refused at the phrasing check, the secret stays contained](assets/arena.png)
@@ -357,7 +357,7 @@ model rather than a hand-written shape, so it cannot drift.
 ## Development
 
 ```bash
-just check       # ruff, mypy strict, yapf, 337 pytest
+just check       # ruff, mypy strict, yapf, 339 pytest
 just ui-check    # biome, stylelint, tsc, vite build
 just bench       # detection, false positives, per-check ablation
 just arena       # the full stack in Docker

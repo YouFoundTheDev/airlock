@@ -85,7 +85,7 @@ uv sync
 just check
 ```
 
-That runs ruff, mypy in strict mode, a format check, and 337 tests. It should be green before you change anything, so that when it is red you know it was you.
+That runs ruff, mypy in strict mode, a format check, and 339 tests. It should be green before you change anything, so that when it is red you know it was you.
 
 **See the engine make a ruling:**
 
@@ -155,7 +155,7 @@ airlock/
 ├── bench/
 │   ├── runner.py            Detection, false positives, two-number ablation
 │   └── corpus/              12 attack classes, 5 benign classes
-├── tests/                   337 tests
+├── tests/                   339 tests
 ├── frontend/                The arena UI
 └── learn/                   You are here
 ```

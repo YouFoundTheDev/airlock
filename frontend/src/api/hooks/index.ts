@@ -83,7 +83,17 @@ export const useSession = () =>
     queryFn: async () => {
       const stored = readStoredSession()
       if (stored !== null) {
-        return stored
+        try {
+          const { data } = await apiClient.get(
+            `${API_ENDPOINTS.ARENA.SESSION}/${stored.session_id}`
+          )
+          return sessionResponseSchema.parse(data)
+        } catch (error) {
+          clearStoredSession()
+          if (!(error instanceof ApiError) || error.statusCode !== 404) {
+            throw error
+          }
+        }
       }
 
       const { data } = await apiClient.post(API_ENDPOINTS.ARENA.SESSION)
