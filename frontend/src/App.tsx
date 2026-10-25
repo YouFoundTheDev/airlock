@@ -30,7 +30,7 @@ export default function App(): React.ReactElement {
           }}
         />
       </div>
-      <ReactQueryDevtools initialIsOpen={false} />
+      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   )
 }
