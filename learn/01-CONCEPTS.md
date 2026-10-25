@@ -376,7 +376,7 @@ Write the year into the OWASP identifier. An undated "LLM01" silently rots when 
 
 1. **No, that is correct behavior.** `phrasing` inspects `Provenance.CONTENT` only. A user talking about their own conversation is ordinary English, and firing on it is the false positive that gets firewalls uninstalled. The user cannot injure anyone but themselves here, and if that turn's output later becomes another user's input, it arrives as content and gets inspected then.
 
-2. You broke **per-request unpredictability**. An attacker who obtains one fence, from a leaked log or an echoed prompt, can forge every future one. Tests pass because they generally check a forged guess against a single context, and a wrong guess is still wrong. The control that catches it embeds context A's closing fence inside context B's DATA and asserts B renders exactly one closing fence. With a shared delimiter it renders two.
+2. You broke **per-request unpredictability**. An attacker who obtains one fence, from a leaked log or an echoed prompt, can forge every future one. Tests pass because they generally check a forged guess against a single context, and a wrong guess is still wrong. The control that catches it embeds context A's closing fence inside context B's content and asserts B renders exactly one closing fence. With a shared delimiter it renders two.
 
 3. Refuse `send_email`, permit `search_docs`. The requirement is `UNTAINTED` and it is declared per capability, not globally. Refusing every capability on exposure would make the agent useless the moment it read anything, and a read-only capability with no side effect does not carry data out. The distinction is the capability's impacts, not the exposure level.
 
