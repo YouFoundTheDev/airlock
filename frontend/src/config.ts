@@ -189,6 +189,7 @@ export const COPY = {
   FOOTER_LICENSE: 'AGPL-3.0',
 
   ERRORS: {
+    0: 'Cannot reach the arena. Is the server running?',
     [HTTP_STATUS.PAYLOAD_TOO_LARGE]: 'That ticket is too long.',
     [HTTP_STATUS.TOO_MANY_REQUESTS]: 'Too many attempts. Wait a moment.',
     [HTTP_STATUS.NOT_FOUND]:
