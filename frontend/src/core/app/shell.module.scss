@@ -7,99 +7,105 @@
 @use '../../styles/fonts' as *;
 @use '../../styles/mixins' as *;
 
-.shell {
+.frame {
   display: flex;
+  flex: 1;
   flex-direction: column;
   min-height: 100vh;
-  padding: $space-4;
-
-  @include breakpoint-up('md') {
-    padding: $space-8;
-  }
+  min-height: 100dvh;
+  background-color: $color-field;
 }
 
-.sheet {
+.inner {
   display: flex;
   flex: 1;
   flex-direction: column;
   width: 100%;
   max-width: $measure-page;
+  padding: $space-5 $space-4 $space-6;
   margin: 0 auto;
-  border: $hairline;
-  background-color: $color-paper-lit;
 
-  @include corner-ticks(-1px, $space-4);
-}
-
-.strip {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: $space-3;
-  padding: $space-3 $space-4;
-  border-bottom: $hairline;
-
-  @include breakpoint-up('sm') {
-    grid-template-columns: repeat(3, 1fr);
+  @include breakpoint-up('md') {
+    padding: $space-6 $space-8 $space-8;
   }
 
-  &:last-child {
-    border-top: $hairline;
-    border-bottom: 0;
+  @include breakpoint-up('xl') {
+    padding: $space-8 $space-10 $space-10;
   }
 }
 
-.strip-cell {
-  display: flex;
-  flex-direction: column;
-  gap: $space-1;
-}
-
-.strip-cell-end {
-  @include breakpoint-up('sm') {
-    text-align: right;
-  }
-}
-
-.strip-key {
-  @include plate-type;
-
-  color: $color-ink;
-}
-
-.strip-value {
-  @include label-type($font-size-2xs);
-
-  color: $color-ink-faint;
-}
-
-.content {
+.main {
   flex: 1;
   width: 100%;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: $space-2 $space-6;
+  padding-top: $space-5;
+  margin-top: $space-6;
+  color: $color-on-field-muted;
+  border-top: 1px solid $color-on-field-line;
+
+  @include label-type($font-size-xs);
+}
+
+.foot-name {
+  font-weight: $font-weight-bold;
+  color: $color-on-field;
+}
+
+.foot-spec {
+  flex: 1;
+}
+
+.foot-end {
+  display: flex;
+  gap: $space-4;
+}
+
+.foot-link {
+  color: $color-on-field;
+  border-bottom: 1px solid $color-on-field-line;
+  transition: border-color $duration-fast $ease;
+
+  @include focus-ring;
+
+  &:focus-visible {
+    outline-color: $color-on-field;
+  }
+
+  &:hover {
+    border-color: $color-on-field;
+  }
 }
 
 .error {
   display: flex;
   flex-direction: column;
   gap: $space-3;
-  padding: $space-8 $space-4;
-  border-left: 3px solid $color-signal;
+  padding: $space-6;
+  background-color: $color-panel;
+  border: $plate-border;
+  border-left: 8px solid $color-refuse;
 }
 
 .error-heading {
-  @include display-type($font-size-2xl);
+  @include heading-type($font-size-2xl);
 }
 
 .error-body {
-  font-family: $font-mono;
-  font-size: $font-size-sm;
-  color: $color-ink-soft;
+  @include data-type($font-size-sm);
+
   white-space: pre-wrap;
   overflow-x: auto;
 }
 
 .loading {
-  @include plate-type($font-size-xs);
+  @include data-type($font-size-sm);
 
   padding: $space-12 $space-4;
-  color: $color-ink-faint;
+  color: $color-on-field-muted;
 }

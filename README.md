@@ -21,6 +21,8 @@
 [![Tests](https://img.shields.io/badge/tests-337-8B5CF6?style=flat)](#development)
 [![License: AGPLv3](https://img.shields.io/badge/License-AGPL_v3-purple.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
+![The airlock arena at level 6: a ticket is refused at the phrasing check, the secret stays contained](assets/arena.png)
+
 **Untrusted input goes in. Only authorized effects come out.**
 
 Airlock is a prompt injection firewall built on a refusal: it does not try

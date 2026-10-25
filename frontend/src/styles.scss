@@ -10,30 +10,21 @@
 @use 'styles/reset';
 @use 'styles/tokens' as *;
 @use 'styles/fonts' as *;
-@use 'styles/mixins' as *;
 
-$grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.34'/%3E%3C/svg%3E");
-
-body {
-  font-family: $font-display;
-  font-size: $font-size-base;
-  color: $color-text;
-  background-color: $color-bg;
+html {
+  background-color: $color-field;
 }
 
-body::before {
-  position: fixed;
-  inset: 0;
-  z-index: $z-base;
-  background-image: $grain;
-  opacity: 0.5;
-  mix-blend-mode: multiply;
-  pointer-events: none;
-  content: '';
+body {
+  font-family: $font-sans;
+  font-size: $font-size-base;
+  font-weight: $font-weight-normal;
+  color: $color-ink;
+  background-color: $color-field;
 }
 
 ::selection {
-  color: $color-paper-lit;
+  color: $color-on-field;
   background-color: $color-ink;
 }
 

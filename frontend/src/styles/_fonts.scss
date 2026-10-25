@@ -3,10 +3,8 @@
 // _fonts.scss
 // ===================
 
-$font-display: 'Space Grotesk Variable', 'Helvetica Neue', Helvetica, Arial,
-  sans-serif;
-$font-plate: 'Martian Mono Variable', ui-monospace, SFMono-Regular, Menlo,
-  Consolas, monospace;
+$font-sans: 'Archivo Variable', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+$font-display: $font-sans;
 $font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
   'Liberation Mono', monospace;
-$font-sans: $font-display;
+$font-plate: $font-sans;

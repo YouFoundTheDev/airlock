@@ -13,11 +13,13 @@
   width: 100%;
   padding: $space-3 $space-4;
   color: $color-ink;
-  background-color: $color-paper-lit;
-  border: $rule-ink;
-  border-left: 4px solid $color-signal;
+  background-color: $color-panel;
+  border: $plate-border;
+  border-left: 6px solid $color-refuse;
 }
 
 .toast-title {
-  @include plate-type($font-size-2xs);
+  @include label-type($font-size-sm);
+
+  font-weight: $font-weight-semibold;
 }

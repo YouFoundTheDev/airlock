@@ -27,52 +27,65 @@ $font-size-2xl: 1.5rem;
 $font-size-3xl: 1.875rem;
 $font-size-4xl: 2.25rem;
 $font-size-5xl: 3rem;
-$font-size-display: clamp(3.25rem, 11vw, 9.5rem);
-$font-size-numeral: clamp(2.5rem, 7vw, 5.5rem);
+$font-size-display: clamp(3.5rem, 10vw, 8.75rem);
+$font-size-numeral: clamp(1.75rem, 4vw, 2.75rem);
 
 $font-weight-normal: 400;
 $font-weight-medium: 500;
 $font-weight-semibold: 600;
 $font-weight-bold: 700;
+$font-weight-black: 900;
 
-$line-height-flat: 0.86;
-$line-height-tight: 1.15;
+$line-height-flat: 0.84;
+$line-height-tight: 1.1;
 $line-height-normal: 1.5;
-$line-height-relaxed: 1.7;
+$line-height-relaxed: 1.65;
 
-$tracking-plate: 0.14em;
-$tracking-label: 0.08em;
-$tracking-display: -0.035em;
+$tracking-tight: -0.035em;
+$tracking-flat: -0.02em;
+$tracking-open: 0.02em;
 
 $radius-none: 0;
-$radius-sm: 0.125rem;
-$radius-full: 9999px;
 
-$color-paper: #e8e5db;
-$color-paper-lit: #f0eee6;
-$color-paper-sunk: #dedbd0;
-$color-ink: #16150f;
-$color-ink-soft: #3d3b31;
-$color-ink-faint: #7c7869;
-$color-ink-ghost: #b3ae9d;
-$color-rule: #c3bfb0;
-$color-rule-faint: #d5d1c4;
+// The field is the only saturated surface. Everything readable sits on
+// paper so contrast never depends on the accent.
+$color-field: #1b2ae8;
+$color-field-deep: #111cae;
+$color-panel: #f4f4ef;
+$color-panel-alt: #e7e8e1;
+$color-white: #fdfdfa;
+$color-ink: #0a0e18;
+$color-ink-soft: #3c4353;
+$color-ink-faint: #737b8c;
+$color-line: #c3c7d1;
+$color-line-strong: #0a0e18;
+$color-refuse: #f03a1d;
+$color-refuse-ink: #b32209;
+$color-permit: #006b49;
+$color-warn: #ffc400;
+$color-on-field: #fff;
+$color-on-field-muted: rgb(255, 255, 255, 64%);
+$color-on-field-line: rgb(255, 255, 255, 34%);
 
-$color-signal: #f04a23;
-$color-signal-sunk: #c93b17;
-$color-caution: #e9e70e;
-$color-live: #35c46a;
-
-$color-bg: $color-paper;
-$color-surface: $color-paper-lit;
-$color-border: $color-rule;
+// Kept as aliases so older modules keep compiling while they are ported.
+$color-paper: $color-panel;
+$color-paper-lit: $color-white;
+$color-paper-sunk: $color-panel-alt;
+$color-signal: $color-refuse;
+$color-signal-sunk: $color-refuse-ink;
+$color-caution: $color-warn;
+$color-live: $color-permit;
+$color-bg: $color-field;
+$color-surface: $color-panel;
+$color-border: $color-line;
 $color-text: $color-ink;
 $color-text-muted: $color-ink-faint;
 
-$hairline: 1px solid $color-rule;
-$hairline-faint: 1px solid $color-rule-faint;
-$rule-ink: 1px solid $color-ink;
-$plate-border: 2px solid $color-ink;
+$hairline: 1px solid $color-line;
+$hairline-faint: 1px solid $color-line;
+$rule-ink: 2px solid $color-line-strong;
+$plate-border: 2px solid $color-line-strong;
+$measure-page: 1560px;
 
 $breakpoint-xs: 480px;
 $breakpoint-sm: 640px;
@@ -81,17 +94,12 @@ $breakpoint-lg: 1024px;
 $breakpoint-xl: 1280px;
 $breakpoint-2xl: 1536px;
 
-$measure-page: 1420px;
-$tick-size: 0.5rem;
-
 $z-base: 1;
 $z-dropdown: 1000;
 $z-modal: 1300;
 $z-toast: 1400;
 
-$duration-instant: 80ms;
-$duration-fast: 150ms;
-$duration-normal: 250ms;
-$duration-slow: 600ms;
+$duration-fast: 140ms;
+$duration-normal: 260ms;
+$duration-slow: 420ms;
 $ease: cubic-bezier(0.2, 0, 0, 1);
-$ease-mechanical: steps(6, end);

@@ -9,6 +9,8 @@ import { Outlet } from 'react-router-dom'
 import { COPY } from '@/config'
 import styles from './shell.module.scss'
 
+const SOURCE = 'https://github.com/YouFoundTheDev/airlock'
+
 function ShellErrorFallback({ error }: { error: Error }): React.ReactElement {
   return (
     <div className={styles.error}>
@@ -19,29 +21,14 @@ function ShellErrorFallback({ error }: { error: Error }): React.ReactElement {
 }
 
 function ShellLoading(): React.ReactElement {
-  return <div className={styles.loading}>{COPY.SUBMITTING}</div>
+  return <div className={styles.loading}>{COPY.LOADING}</div>
 }
 
 export function Shell(): React.ReactElement {
   return (
-    <div className={styles.shell}>
-      <div className={styles.sheet}>
-        <header className={styles.strip}>
-          <div className={styles.stripCell}>
-            <span className={styles.stripKey}>{COPY.UNIT_ID}</span>
-            <span className={styles.stripValue}>{COPY.UNIT_ROLE}</span>
-          </div>
-          <div className={styles.stripCell}>
-            <span className={styles.stripKey}>{COPY.NODE}</span>
-            <span className={styles.stripValue}>{COPY.NODE_STATE}</span>
-          </div>
-          <div className={`${styles.stripCell} ${styles.stripCellEnd}`}>
-            <span className={styles.stripKey}>{COPY.ORIGIN}</span>
-            <span className={styles.stripValue}>{COPY.ORIGIN_DETAIL}</span>
-          </div>
-        </header>
-
-        <main className={styles.content}>
+    <div className={styles.frame}>
+      <div className={styles.inner}>
+        <main className={styles.main}>
           <ErrorBoundary FallbackComponent={ShellErrorFallback}>
             <Suspense fallback={<ShellLoading />}>
               <Outlet />
@@ -49,11 +36,14 @@ export function Shell(): React.ReactElement {
           </ErrorBoundary>
         </main>
 
-        <footer className={styles.strip}>
-          <span className={styles.stripValue}>{COPY.FOOTER_SPEC}</span>
-          <span className={styles.stripValue}>{COPY.FOOTER_BUILD}</span>
-          <span className={`${styles.stripValue} ${styles.stripCellEnd}`}>
-            {COPY.FOOTER_MARK}
+        <footer className={styles.foot}>
+          <span className={styles.footName}>{COPY.TITLE}</span>
+          <span className={styles.footSpec}>{COPY.FOOTER_SPEC}</span>
+          <span className={styles.footEnd}>
+            <a className={styles.footLink} href={SOURCE}>
+              {COPY.FOOTER_SOURCE}
+            </a>
+            <span>{COPY.FOOTER_LICENSE}</span>
           </span>
         </footer>
       </div>

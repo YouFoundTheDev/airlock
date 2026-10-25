@@ -10,143 +10,127 @@
 .page {
   display: flex;
   flex-direction: column;
-}
-
-.masthead {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: $space-6;
-  padding: $space-8 $space-4 $space-6;
-  overflow: hidden;
+  gap: $space-5;
 
   @include breakpoint-up('md') {
-    padding: $space-12 $space-8 $space-8;
-  }
-
-  @include breakpoint-up('lg') {
-    grid-template-columns: minmax(0, 1fr) 16rem;
-    align-items: end;
+    gap: $space-6;
   }
 }
 
-.masthead-main {
+// ---------------------------------------------------------------------------
+// Masthead sits on the cobalt field. Everything readable below it sits on
+// paper, so contrast never depends on the accent.
+// ---------------------------------------------------------------------------
+
+.masthead {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $space-5;
+  align-items: end;
+  color: $color-on-field;
+
+  @include breakpoint-up('lg') {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: $space-8;
+  }
+}
+
+.brand {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
 
-.masthead-meta {
-  display: flex;
-  flex-direction: column;
-  border-top: $rule-ink;
-}
-
-.meta-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: $space-3;
-  padding: $space-2 0;
-  border-bottom: $hairline;
-}
-
-.meta-key {
-  @include plate-type($font-size-2xs);
-
-  color: $color-ink-faint;
-}
-
-.meta-value {
-  @include label-type($font-size-2xs);
-
-  color: $color-ink;
-  font-variant-numeric: tabular-nums;
-}
-
-.title {
+.wordmark {
   @include display-type;
 
-  margin-left: -0.06em;
-  color: $color-ink;
-  text-transform: lowercase;
+  color: $color-on-field;
+  text-transform: uppercase;
   overflow-wrap: anywhere;
 }
 
 .tagline {
-  @include label-type($font-size-sm);
+  @include label-type($font-size-lg);
 
-  max-width: 46ch;
+  max-width: 38ch;
   margin-top: $space-4;
-  color: $color-ink-soft;
-  text-transform: none;
+  font-weight: $font-weight-medium;
+  color: $color-on-field-muted;
 }
 
-.masthead-rule {
-  height: $space-6;
-
-  @include ruled-field($color-rule, 5px);
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, auto));
+  gap: $space-5;
+  padding-top: $space-3;
+  border-top: 1px solid $color-on-field-line;
 
   @include breakpoint-up('lg') {
-    grid-column: 1 / -1;
+    gap: $space-8;
   }
 }
 
-.plate-heading {
-  @include plate-type($font-size-2xs);
-
-  padding-bottom: $space-3;
-  color: $color-ink;
-  border-bottom: $rule-ink;
-}
-
-.sub-heading {
-  @include plate-type($font-size-2xs);
-
-  color: $color-ink-faint;
-}
-
-.config {
+.stat {
   display: flex;
   flex-direction: column;
-  gap: $space-5;
-  padding: $space-6 $space-4;
-  border-top: $hairline;
+  gap: 2px;
+}
+
+.stat-label {
+  @include label-type($font-size-xs);
+
+  color: $color-on-field-muted;
+}
+
+.stat-value {
+  @include data-type($font-size-sm);
+
+  color: $color-on-field;
+}
+
+// ---------------------------------------------------------------------------
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  background-color: $color-panel;
+  border: $plate-border;
+}
+
+.level-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  background-color: $color-ink;
+  border-bottom: $plate-border;
 
   @include breakpoint-up('md') {
-    padding: $space-8;
+    grid-template-columns: repeat(6, 1fr);
   }
 }
 
-.levels {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
-  gap: 0;
-  border: $hairline;
-}
-
-.level-plate {
+.level {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: $space-2;
-  min-height: 7.5rem;
+  min-height: 6.25rem;
   padding: $space-3;
   color: $color-ink;
   text-align: left;
-  background-color: transparent;
-  border-right: $hairline;
-  border-bottom: $hairline;
+  background-color: $color-panel;
   transition: background-color $duration-fast $ease,
     color $duration-fast $ease;
 
-  @include focus-plate;
+  @include focus-ring;
 
   &:hover {
-    background-color: $color-paper-sunk;
+    background-color: $color-panel-alt;
   }
 
   &[data-selected='true'] {
-    @include inverted;
+    color: $color-panel;
+    background-color: $color-ink;
 
     &:hover {
       background-color: $color-ink;
@@ -154,282 +138,261 @@
   }
 }
 
-.level-number {
-  @include display-type($font-size-3xl);
+.level-num {
+  @include display-type($font-size-numeral);
 
   line-height: 1;
 }
 
-.level-title {
-  @include label-type($font-size-2xs);
+.level-name {
+  @include label-type($font-size-xs);
 
-  margin-top: auto;
-  color: inherit;
-  opacity: 0.75;
+  min-height: 2.4em;
+  font-weight: $font-weight-medium;
+  opacity: 0.8;
 }
 
-.level-bars {
+.pips {
   display: flex;
-  gap: 2px;
-  height: 4px;
+  gap: 3px;
+  width: 100%;
+  margin-top: auto;
 }
 
-.level-bar {
+.pip {
   flex: 1;
-  background-color: currentColor;
-  opacity: 0.18;
+  height: 5px;
+  background-color: $color-line;
+
+  [data-selected='true'] & {
+    background-color: rgb(255, 255, 255, 24%);
+  }
 
   &[data-on='true'] {
-    opacity: 1;
+    background-color: $color-ink;
+
+    [data-selected='true'] & {
+      background-color: $color-panel;
+    }
   }
 }
 
-.detail {
+.desk {
   display: grid;
   grid-template-columns: 1fr;
-  gap: $space-6;
+  min-width: 0;
+
+  > * {
+    min-width: 0;
+  }
 
   @include breakpoint-up('lg') {
-    grid-template-columns: 1.15fr 1fr;
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
   }
 }
 
-.teaches {
+.work {
   display: flex;
   flex-direction: column;
-  gap: $space-3;
-}
-
-.teaches-label {
-  @include plate-type($font-size-2xs);
-
-  color: $color-ink-faint;
-}
-
-.teaches-text {
-  font-family: $font-display;
-  font-size: $font-size-xl;
-  line-height: $line-height-tight;
-  letter-spacing: $tracking-display;
-  color: $color-ink;
-
-  @include breakpoint-up('md') {
-    font-size: $font-size-2xl;
-  }
-}
-
-.rail {
-  display: flex;
-  flex-direction: column;
-  gap: $space-3;
-}
-
-.rail-heading {
-  @include plate-type($font-size-2xs);
-
-  color: $color-ink-faint;
-}
-
-.rail-list {
-  display: flex;
-  flex-direction: column;
-  border-top: $hairline;
-}
-
-.rail-item {
-  display: grid;
-  grid-template-columns: 3rem 1fr;
-  align-items: center;
-  gap: $space-3;
-  padding: $space-2 $space-1;
-  border-bottom: $hairline;
-  color: $color-ink-ghost;
-
-  &[data-active='true'] {
-    color: $color-ink;
-    background-color: $color-paper-sunk;
-  }
-}
-
-.rail-index {
-  @include label-type($font-size-2xs);
-}
-
-.rail-name {
-  @include plate-type($font-size-xs);
-
-  letter-spacing: $tracking-label;
-
-  [data-active='false'] & {
-    text-decoration: line-through;
-  }
-}
-
-.note {
-  font-family: $font-mono;
-  font-size: $font-size-xs;
-  line-height: $line-height-relaxed;
-  color: $color-ink-faint;
-  max-width: 62ch;
-
-  &[data-tone='loud'] {
-    padding-left: $space-3;
-    color: $color-ink;
-    border-left: 2px solid $color-signal;
-  }
-}
-
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: $space-3;
-  padding: $space-6 $space-4;
-  border-top: $hairline;
-  background-color: $color-paper;
+  gap: $space-6;
+  padding: $space-5 $space-4;
 
   @include breakpoint-up('md') {
     padding: $space-8;
   }
 }
 
-.form-head {
+.side {
   display: flex;
+  flex-direction: column;
+  gap: $space-6;
+  padding: $space-5 $space-4;
+  border-top: $plate-border;
+
+  @include breakpoint-up('lg') {
+    padding: $space-8;
+    border-top: 0;
+    border-left: $plate-border;
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: $space-4;
+  gap: $space-2 $space-4;
   padding-bottom: $space-3;
   border-bottom: $rule-ink;
 }
 
-.label {
-  @include plate-type($font-size-2xs);
+.heading {
+  @include heading-type($font-size-2xl);
 }
 
-.counter {
-  @include label-type($font-size-2xs);
+.meta {
+  @include data-type($font-size-xs);
 
   color: $color-ink-faint;
 }
 
+.sub-head {
+  @include label-type($font-size-xs);
+
+  font-weight: $font-weight-bold;
+  color: $color-ink;
+}
+
+.note {
+  @include label-type($font-size-sm);
+
+  max-width: 62ch;
+  color: $color-ink-soft;
+
+  &[data-loud='true'] {
+    font-weight: $font-weight-semibold;
+    color: $color-refuse-ink;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Ticket form
+// ---------------------------------------------------------------------------
+
+.form {
+  display: flex;
+  flex-direction: column;
+}
+
 .hint {
-  font-family: $font-mono;
-  font-size: $font-size-xs;
+  @include label-type($font-size-sm);
+
+  margin: $space-3 0;
   color: $color-ink-soft;
 }
 
 .textarea {
   width: 100%;
-  min-height: 11rem;
+  min-height: 13rem;
   padding: $space-4;
   font-family: $font-mono;
   font-size: $font-size-sm;
   line-height: $line-height-relaxed;
   color: $color-ink;
   resize: vertical;
-  background-color: $color-paper-lit;
-  border: $rule-ink;
+  background-color: $color-white;
+  border: $plate-border;
   border-radius: $radius-none;
 
-  @include focus-plate;
+  @include focus-ring;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-3 $space-4;
+  margin-top: $space-4;
 }
 
 .submit {
-  align-self: flex-start;
-  padding: $space-3 $space-8;
-  color: $color-paper-lit;
+  padding: $space-3 $space-6;
+  font-family: $font-sans;
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+  color: $color-panel;
   background-color: $color-ink;
   border: $plate-border;
+  border-radius: $radius-none;
   transition: background-color $duration-fast $ease,
-    color $duration-fast $ease;
+    border-color $duration-fast $ease;
 
-  @include plate-type($font-size-2xs);
-  @include focus-plate;
+  @include focus-ring;
 
   &:hover:not(:disabled) {
-    color: $color-ink;
-    background-color: $color-signal;
-    border-color: $color-signal;
+    background-color: $color-field;
+    border-color: $color-field;
   }
 
   &:disabled {
-    color: $color-ink-ghost;
+    color: $color-ink-faint;
     cursor: not-allowed;
     background-color: transparent;
-    border-color: $color-rule;
+    border: 2px dashed $color-line;
   }
 }
+
+.level-tag {
+  @include data-type($font-size-xs);
+
+  color: $color-ink-faint;
+}
+
+// ---------------------------------------------------------------------------
+// Census
+// ---------------------------------------------------------------------------
 
 .specimen {
   display: flex;
   flex-direction: column;
-  gap: $space-4;
-  padding: $space-6 $space-4;
-  border-top: $hairline;
-
-  @include breakpoint-up('md') {
-    padding: $space-8;
-  }
+  gap: $space-3;
+  padding-top: $space-6;
+  border-top: $plate-border;
 }
 
-.specimen-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: $space-4;
-}
-
-.ghost-button {
-  padding: $space-2 $space-3;
-  color: $color-ink-soft;
-  border: $hairline;
+.text-button {
+  padding: 2px 0;
+  font-family: $font-sans;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-ink;
+  border-bottom: $rule-ink;
   transition: color $duration-fast $ease,
     border-color $duration-fast $ease;
 
-  @include plate-type($font-size-2xs);
-  @include focus-plate;
+  @include focus-ring;
 
   &:hover,
   &[data-on='true'] {
-    color: $color-ink;
-    border-color: $color-ink;
+    color: $color-field;
+    border-color: $color-field;
   }
 }
 
-.census-grid {
+.census {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  border-top: $hairline;
-  border-left: $hairline;
+  gap: 2px;
+  background-color: $color-ink;
+  border: $plate-border;
 
   @include breakpoint-up('sm') {
     grid-template-columns: repeat(3, 1fr);
   }
-
-  @include breakpoint-up('lg') {
-    grid-template-columns: repeat(6, 1fr);
-  }
 }
 
-.census-cell {
+.cell {
   display: flex;
   flex-direction: column;
   gap: $space-1;
-  padding: $space-3;
-  border-right: $hairline;
-  border-bottom: $hairline;
+  padding: $space-3 $space-4;
+  background-color: $color-panel;
 
   &[data-hot='true'] {
-    background-color: $color-caution;
+    background-color: $color-warn;
   }
 }
 
-.census-value {
+.cell-value {
   @include display-type($font-size-2xl);
 
   font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
-.census-label {
+.cell-label {
   @include label-type($font-size-2xs);
 
   color: $color-ink-faint;
@@ -444,258 +407,397 @@
   font-family: $font-mono;
   font-size: $font-size-sm;
   line-height: 2;
-  color: $color-ink-soft;
+  color: $color-ink;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  background-color: $color-paper-lit;
-  border: $hairline;
-
-  @include dotted-field($color-rule-faint, 5px);
+  background-color: $color-panel-alt;
+  border: $plate-border;
 }
 
 .reveal-mark {
-  padding: 0 $space-1;
+  padding: 1px $space-1;
   margin: 0 1px;
+  font-family: $font-mono;
   font-size: $font-size-2xs;
-  letter-spacing: $tracking-label;
-  color: $color-paper-lit;
-  text-transform: uppercase;
+  color: $color-panel;
   background-color: $color-ink;
 
   &[data-mark='TAG'] {
     color: $color-ink;
-    background-color: $color-caution;
+    background-color: $color-warn;
   }
 
   &[data-mark='BIDI'] {
-    background-color: $color-signal;
+    color: $color-white;
+    background-color: $color-refuse-ink;
   }
 }
 
-.error {
-  padding: $space-3 $space-4;
-  margin: 0 $space-4;
-  color: $color-paper-lit;
-  background-color: $color-signal;
+// ---------------------------------------------------------------------------
+// Signal path
+// ---------------------------------------------------------------------------
 
-  @include plate-type($font-size-2xs);
-}
-
-.awaiting {
-  padding: $space-12 $space-4;
-  color: $color-ink-ghost;
-  text-align: center;
-  border-top: $hairline;
-
-  @include plate-type($font-size-2xs);
-}
-
-.verdict {
+.signal {
   display: flex;
   flex-direction: column;
-  gap: $space-5;
-  padding: $space-6 $space-4 $space-10;
-  border-top: $rule-ink;
-
-  @include breakpoint-up('md') {
-    padding: $space-8 $space-8 $space-12;
-  }
 }
 
-.verdict-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: $space-4;
-}
-
-.attempts {
-  @include label-type($font-size-2xs);
-
-  color: $color-ink-faint;
-}
-
-.decisions {
+.path {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 0;
-  border-top: $hairline;
-  border-left: $hairline;
-
-  @include breakpoint-up('sm') {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  min-width: 0;
+  gap: 2px;
+  margin-top: $space-4;
+  background-color: $color-ink;
+  border: $plate-border;
 }
 
-.decision {
+.node {
   display: flex;
   flex-direction: column;
   gap: $space-2;
-  padding: $space-4;
-  border-right: $hairline;
-  border-bottom: $hairline;
+  min-width: 0;
+  min-height: 5.5rem;
+  padding: $space-3 $space-2;
+  background-color: $color-panel;
+  transition: background-color $duration-normal $ease;
+
+  @include breakpoint-down('sm') {
+    padding: $space-2 $space-1;
+  }
+
+  &[data-state='stop'] {
+    background-color: #fdeae6;
+  }
 }
 
-.decision-key {
-  @include plate-type($font-size-2xs);
+.lamp {
+  width: 0.75rem;
+  height: 0.75rem;
+  background-color: $color-line;
+  border: 2px solid $color-ink;
+  border-radius: 50%;
+  transition: background-color $duration-normal $ease;
+}
 
+.node[data-state='on'] .lamp,
+.node[data-state='pass'] .lamp {
+  background-color: $color-permit;
+}
+
+.node[data-state='hit'] .lamp,
+.node[data-state='stop'] .lamp {
+  background-color: $color-refuse;
+}
+
+.node[data-state='stop'] .lamp {
+  box-shadow: 0 0 0 4px rgb(240, 58, 29, 24%);
+}
+
+.node[data-state='held'] .lamp {
+  background-color: transparent;
+  border-style: dashed;
+}
+
+.node[data-state='off'] .lamp {
+  background-color: transparent;
+  border-color: $color-line;
+}
+
+.node-name {
+  @include label-type($font-size-xs);
+
+  font-weight: $font-weight-bold;
+  color: $color-ink;
+  overflow-wrap: anywhere;
+
+  @include breakpoint-down('sm') {
+    font-size: $font-size-2xs;
+  }
+}
+
+.node[data-state='off'] .node-name,
+.node[data-state='held'] .node-name {
   color: $color-ink-faint;
 }
 
-.decision-value {
-  @include display-type($font-size-3xl);
+.node-state {
+  @include label-type($font-size-2xs);
 
-  text-transform: lowercase;
+  margin-top: auto;
+  color: $color-ink-faint;
+}
 
-  &[data-decision='refuse'] {
-    color: $color-signal;
-  }
+.node[data-state='stop'] .node-state {
+  font-weight: $font-weight-semibold;
+  color: $color-refuse-ink;
+}
 
-  &[data-unreached='true'] {
-    font-size: $font-size-lg;
-    color: $color-ink-ghost;
+.path-note {
+  @include label-type($font-size-sm);
+
+  padding-left: $space-3;
+  margin-top: $space-3;
+  color: $color-ink-soft;
+  border-left: 3px solid $color-line;
+
+  [data-refused='true'] & {
+    border-left-color: $color-refuse;
   }
 }
 
-.findings {
+// ---------------------------------------------------------------------------
+// Level note
+// ---------------------------------------------------------------------------
+
+.level-note {
   display: flex;
   flex-direction: column;
-  border-top: $hairline;
+  gap: $space-3;
+  padding-top: $space-6;
+  border-top: 1px solid $color-line;
 }
 
-.finding {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: $space-1 $space-3;
-  align-items: center;
-  padding: $space-3 $space-1;
-  border-bottom: $hairline;
-
-  @include breakpoint-up('md') {
-    grid-template-columns: 7rem 1fr 8rem 5rem 5rem;
-  }
+.teaches {
+  font-family: $font-sans;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-medium;
+  line-height: $line-height-normal;
+  color: $color-ink;
 }
 
-.finding-layer {
-  @include plate-type($font-size-2xs);
-}
-
-.finding-rule {
-  font-family: $font-mono;
-  font-size: $font-size-sm;
-  color: $color-ink-soft;
-  overflow-wrap: anywhere;
-}
-
-.finding-track {
-  display: block;
-  height: 0.75rem;
-  background-color: $color-paper-sunk;
-}
-
-.finding-fill {
-  display: block;
-  height: 100%;
-  background-color: $color-ink;
-
-  [data-hard='true'] & {
-    background-color: $color-signal;
-  }
-}
-
-.finding-severity {
-  @include label-type($font-size-2xs);
+.off-list {
+  @include label-type($font-size-xs);
 
   color: $color-ink-faint;
 }
 
-.finding-flag {
-  @include label-type($font-size-2xs);
+.bounty {
+  @include label-type($font-size-sm);
 
-  color: $color-signal;
+  padding-left: $space-3;
+  font-weight: $font-weight-semibold;
+  color: $color-refuse-ink;
+  border-left: 3px solid $color-refuse;
+}
+
+// ---------------------------------------------------------------------------
+// Result
+// ---------------------------------------------------------------------------
+
+.error {
+  padding: $space-3 $space-4;
+  font-family: $font-sans;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-white;
+  background-color: $color-refuse-ink;
+  border: $plate-border;
+}
+
+.awaiting {
+  @include label-type($font-size-sm);
+
+  padding: $space-6;
+  color: $color-ink-faint;
+  text-align: center;
+  border: 2px dashed $color-line;
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  padding: $space-4;
+  background-color: $color-white;
+  border: $plate-border;
+  animation: result-in $duration-normal $ease both;
+}
+
+.rulings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+  background-color: $color-ink;
+  border: $plate-border;
+}
+
+.ruling {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  padding: $space-3 $space-4;
+  background-color: $color-panel;
+}
+
+.ruling-label {
+  @include label-type($font-size-xs);
+
+  color: $color-ink-faint;
+}
+
+.ruling-value {
+  @include display-type($font-size-3xl);
+
+  text-transform: uppercase;
+
+  [data-ruling='refuse'] & {
+    color: $color-refuse;
+  }
+
+  [data-ruling='permit'] & {
+    color: $color-permit;
+  }
+
+  [data-ruling='none'] & {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-medium;
+    color: $color-ink-faint;
+    text-transform: none;
+  }
 }
 
 .seal {
   display: flex;
-  flex-direction: column;
-  gap: $space-3;
-  padding: $space-6 $space-4;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $space-2 $space-4;
+  padding: $space-3 $space-4;
+  background-color: $color-panel-alt;
   border: $plate-border;
 
-  @include breakpoint-up('md') {
-    padding: $space-8;
-  }
-
   &[data-escaped='true'] {
-    @include inverted;
-
+    color: $color-white;
+    background-color: $color-refuse-ink;
     border-color: $color-ink;
   }
 }
 
 .seal-label {
-  @include plate-type($font-size-2xs);
+  @include label-type($font-size-xs);
 
-  color: $color-ink-faint;
+  opacity: 0.75;
+}
+
+.seal-value {
+  @include heading-type($font-size-xl);
+
+  color: $color-permit;
+  text-transform: uppercase;
+  letter-spacing: $tracking-open;
 
   [data-escaped='true'] & {
-    color: $color-signal;
+    color: $color-white;
   }
 }
 
-.seal-text {
-  @include display-type($font-size-numeral);
+.alerts {
+  display: flex;
+  flex-direction: column;
+  border-top: $plate-border;
+}
 
-  [data-escaped='true'] & {
-    color: $color-paper-lit;
-  }
+.alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: $space-1 $space-3;
+  padding: $space-2 $space-1;
+  border-bottom: 1px solid $color-line;
+}
+
+.alert-check {
+  @include label-type($font-size-xs);
+
+  width: 5rem;
+  font-weight: $font-weight-bold;
+}
+
+.alert-rule {
+  @include data-type($font-size-xs);
+
+  flex: 1;
+  min-width: 8rem;
+  color: $color-ink-soft;
+  overflow-wrap: anywhere;
+}
+
+.alert-weight {
+  @include label-type($font-size-2xs);
+
+  color: $color-ink-faint;
+}
+
+.alert-flag {
+  @include label-type($font-size-2xs);
+
+  width: 2.25rem;
+  font-weight: $font-weight-bold;
+  color: $color-refuse-ink;
+  text-align: right;
 }
 
 .agent {
-  display: flex;
-  flex-direction: column;
-  gap: $space-3;
-}
-
-.agent-text {
-  padding: $space-4;
+  padding: $space-3 $space-4;
   font-family: $font-mono;
   font-size: $font-size-sm;
   line-height: $line-height-relaxed;
   color: $color-ink;
   white-space: pre-wrap;
-  overflow-x: auto;
-  background-color: $color-paper;
-  border-top: $rule-ink;
-  border-bottom: $hairline;
+  overflow-wrap: anywhere;
+  background-color: $color-panel-alt;
+  border-left: 4px solid $color-ink;
 }
 
-.actions {
+.proposals {
   display: flex;
   flex-direction: column;
-  border-top: $hairline;
+  border-top: $plate-border;
 }
 
-.action {
-  display: grid;
-  grid-template-columns: 1fr;
+.proposal {
+  display: flex;
+  flex-wrap: wrap;
   gap: $space-1 $space-3;
-  align-items: center;
-  padding: $space-3 $space-1;
-  border-bottom: $hairline;
+  padding: $space-2 $space-1;
+  border-bottom: 1px solid $color-line;
+}
 
-  @include breakpoint-up('md') {
-    grid-template-columns: 12rem 1fr;
+.proposal-name {
+  @include label-type($font-size-xs);
+
+  font-weight: $font-weight-bold;
+}
+
+.proposal-args {
+  @include data-type($font-size-xs);
+
+  color: $color-ink-soft;
+}
+
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.action-name {
-  @include plate-type($font-size-2xs);
-}
+@media (prefers-reduced-motion: reduce) {
+  .result {
+    animation: none;
+  }
 
-.action-args {
-  font-family: $font-mono;
-  font-size: $font-size-xs;
-  color: $color-ink-soft;
-  overflow-x: auto;
+  .level,
+  .submit,
+  .text-button,
+  .lamp,
+  .node {
+    transition: none;
+  }
 }

@@ -3,8 +3,7 @@
 // main.tsx
 // ===========================
 
-import '@fontsource-variable/martian-mono'
-import '@fontsource-variable/space-grotesk'
+import '@fontsource-variable/archivo'
 import '@fontsource/ibm-plex-mono/400.css'
 import '@fontsource/ibm-plex-mono/500.css'
 

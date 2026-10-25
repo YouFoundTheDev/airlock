@@ -169,10 +169,7 @@ importers:
 
   .:
     dependencies:
-      '@fontsource-variable/martian-mono':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource-variable/space-grotesk':
+      '@fontsource-variable/archivo':
         specifier: ^5.3.0
         version: 5.3.0
       '@fontsource/ibm-plex-mono':
@@ -183,7 +180,7 @@ importers:
         version: 5.90.12(react@19.2.1)
       axios:
         specifier: ^1.13.0
-        version: 1.13.2
+        version: 1.13.2(debug@4.4.3(supports-color@7.2.0))
       react:
         specifier: ^19.2.1
         version: 19.2.1
@@ -215,9 +212,6 @@ importers:
       '@biomejs/biome':
         specifier: ^2.3.8
         version: 2.3.8
-      '@tanstack/react-query-devtools':
-        specifier: ^5.91.1
-        version: 5.91.1(@tanstack/react-query@5.90.12(react@19.2.1))(react@19.2.1)
       '@types/node':
         specifier: ^24.10.2
         version: 24.10.2
@@ -229,19 +223,19 @@ importers:
         version: 19.2.3(@types/react@19.2.7)
       '@vitejs/plugin-react':
         specifier: ^5.1.1
-        version: 5.1.2(rolldown-vite@7.2.5(@types/node@24.10.2)(sass@1.95.0))
+        version: 5.1.2(rolldown-vite@7.2.5(@types/node@24.10.2)(sass@1.95.0))(supports-color@7.2.0)
       sass:
         specifier: ^1.95.0
         version: 1.95.0
       stylelint:
         specifier: ^16.26.1
-        version: 16.26.1(typescript@5.9.3)
+        version: 16.26.1(supports-color@7.2.0)(typescript@5.9.3)
       stylelint-config-prettier-scss:
         specifier: ^1.0.0
-        version: 1.0.0(stylelint@16.26.1(typescript@5.9.3))
+        version: 1.0.0(stylelint@16.26.1(supports-color@7.2.0)(typescript@5.9.3))
       stylelint-config-standard-scss:
         specifier: ^16.0.0
-        version: 16.0.0(postcss@8.5.6)(stylelint@16.26.1(typescript@5.9.3))
+        version: 16.0.0(postcss@8.5.6)(stylelint@16.26.1(supports-color@7.2.0)(typescript@5.9.3))
       typescript:
         specifier: ~5.9.3
         version: 5.9.3
@@ -250,7 +244,7 @@ importers:
         version: rolldown-vite@7.2.5(@types/node@24.10.2)(sass@1.95.0)
       vite-tsconfig-paths:
         specifier: ^5.1.0
-        version: 5.1.4(rolldown-vite@7.2.5(@types/node@24.10.2)(sass@1.95.0))(typescript@5.9.3)
+        version: 5.1.4(rolldown-vite@7.2.5(@types/node@24.10.2)(sass@1.95.0))(supports-color@7.2.0)(typescript@5.9.3)
 
 packages:
 
@@ -443,11 +437,8 @@ packages:
   '@emnapi/wasi-threads@1.1.0':
     resolution: {integrity: sha512-WI0DdZ8xFSbgMjR1sFsKABJ/C5OnRrjT06JXbZKexJGrDuPTzZdDYfFlsgcCXCyf+suG5QU2e/y1Wo2V/OapLQ==}
 
-  '@fontsource-variable/martian-mono@5.3.0':
-    resolution: {integrity: sha512-0wVODx9ILwNnaYC4XCuSaFRYtj1Prd89MRVaSuv2ng6zLiQkS4SepaWEPefs7vqCZS8sbEOA8jb/4F5KNMnGdg==}
-
-  '@fontsource-variable/space-grotesk@5.3.0':
-    resolution: {integrity: sha512-2IxmvfB08i9vnGB3Ym/AXvhRE+8XOjWMXIyDum03c+tPwH0FUoMNQfGpU8NXPxjbws0Vvss3AH0Zqt4oJBBAdw==}
+  '@fontsource-variable/archivo@5.3.0':
+    resolution: {integrity: sha512-HogK8FJelrD1o7TlZlkIVtHgc20bO5PZRWE7mUeUTdMN055alznQV6/00J00IBeu8FQAH4s3zW9UJNvKExXf+g==}
 
   '@fontsource/ibm-plex-mono@5.3.0':
     resolution: {integrity: sha512-eTgnZjZEGk1QtD3ZstF+Vclo2HLAni8YMy34/DxllwZvyz1lR/1RF/xTiAquOBO7MvqBx8D2Ig2WCPMVfdZu7Q==}
@@ -682,15 +673,6 @@ packages:
 
   '@tanstack/query-core@5.90.12':
     resolution: {integrity: sha512-T1/8t5DhV/SisWjDnaiU2drl6ySvsHj1bHBCWNXd+/T+Hh1cf6JodyEYMd5sgwm+b/mETT4EV3H+zCVczCU5hg==}
-
-  '@tanstack/query-devtools@5.91.1':
-    resolution: {integrity: sha512-l8bxjk6BMsCaVQH6NzQEE/bEgFy1hAs5qbgXl0xhzezlaQbPk6Mgz9BqEg2vTLPOHD8N4k+w/gdgCbEzecGyNg==}
-
-  '@tanstack/react-query-devtools@5.91.1':
-    resolution: {integrity: sha512-tRnJYwEbH0kAOuToy8Ew7bJw1lX3AjkkgSlf/vzb+NpnqmHPdWM+lA2DSdGQSLi1SU0PDRrrCI1vnZnci96CsQ==}
-    peerDependencies:
-      '@tanstack/react-query': ^5.90.10
-      react: ^18 || ^19
 
   '@tanstack/react-query@5.90.12':
     resolution: {integrity: sha512-graRZspg7EoEaw0a8faiUASCyJrqjKPdqJ9EwuDRUF9mEYJ1YPczI9H+/agJ0mOJkPCJDk0lsz5QTrLZ/jQ2rg==}
@@ -1378,6 +1360,7 @@ packages:
   rolldown-vite@7.2.5:
     resolution: {integrity: sha512-u09tdk/huMiN8xwoiBbig197jKdCamQTtOruSalOzbqGje3jdHiV0njQlAW0YvzoahkirFePNQ4RYlfnRQpXZA==}
     engines: {node: ^20.19.0 || >=22.12.0}
+    deprecated: Use 7.3.1 for migration purposes. For the most recent updates, migrate to Vite 8 once you're ready.
     hasBin: true
     peerDependencies:
       '@types/node': ^20.19.0 || >=22.12.0
@@ -1621,20 +1604,20 @@ snapshots:
 
   '@babel/compat-data@7.28.5': {}
 
-  '@babel/core@7.28.5':
+  '@babel/core@7.28.5(supports-color@7.2.0)':
     dependencies:
       '@babel/code-frame': 7.27.1
       '@babel/generator': 7.28.5
       '@babel/helper-compilation-targets': 7.27.2
-      '@babel/helper-module-transforms': 7.28.3(@babel/core@7.28.5)
+      '@babel/helper-module-transforms': 7.28.3(@babel/core@7.28.5(supports-color@7.2.0))(supports-color@7.2.0)
       '@babel/helpers': 7.28.4
       '@babel/parser': 7.28.5
       '@babel/template': 7.27.2
-      '@babel/traverse': 7.28.5
+      '@babel/traverse': 7.28.5(supports-color@7.2.0)
       '@babel/types': 7.28.5
       '@jridgewell/remapping': 2.3.5
       convert-source-map: 2.0.0
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@7.2.0)
       gensync: 1.0.0-beta.2
       json5: 2.2.3
       semver: 6.3.1
@@ -1659,19 +1642,19 @@ snapshots:
 
   '@babel/helper-globals@7.28.0': {}
 
-  '@babel/helper-module-imports@7.27.1':
+  '@babel/helper-module-imports@7.27.1(supports-color@7.2.0)':
     dependencies:
-      '@babel/traverse': 7.28.5
+      '@babel/traverse': 7.28.5(supports-color@7.2.0)
       '@babel/types': 7.28.5
     transitivePeerDependencies:
       - supports-color
 
-  '@babel/helper-module-transforms@7.28.3(@babel/core@7.28.5)':
+  '@babel/helper-module-transforms@7.28.3(@babel/core@7.28.5(supports-color@7.2.0))(supports-color@7.2.0)':
     dependencies:
-      '@babel/core': 7.28.5
-      '@babel/helper-module-imports': 7.27.1
+      '@babel/core': 7.28.5(supports-color@7.2.0)
+      '@babel/helper-module-imports': 7.27.1(supports-color@7.2.0)
       '@babel/helper-validator-identifier': 7.28.5
-      '@babel/traverse': 7.28.5
+      '@babel/traverse': 7.28.5(supports-color@7.2.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -1692,14 +1675,14 @@ snapshots:
     dependencies:
       '@babel/types': 7.28.5
 
-  '@babel/plugin-transform-react-jsx-self@7.27.1(@babel/core@7.28.5)':
+  '@babel/plugin-transform-react-jsx-self@7.27.1(@babel/core@7.28.5(supports-color@7.2.0))':
     dependencies:
-      '@babel/core': 7.28.5
+      '@babel/core': 7.28.5(supports-color@7.2.0)
       '@babel/helper-plugin-utils': 7.27.1
 
-  '@babel/plugin-transform-react-jsx-source@7.27.1(@babel/core@7.28.5)':
+  '@babel/plugin-transform-react-jsx-source@7.27.1(@babel/core@7.28.5(supports-color@7.2.0))':
     dependencies:
-      '@babel/core': 7.28.5
+      '@babel/core': 7.28.5(supports-color@7.2.0)
       '@babel/helper-plugin-utils': 7.27.1
 
   '@babel/runtime@7.28.4': {}
@@ -1710,7 +1693,7 @@ snapshots:
       '@babel/parser': 7.28.5
       '@babel/types': 7.28.5
 
-  '@babel/traverse@7.28.5':
+  '@babel/traverse@7.28.5(supports-color@7.2.0)':
     dependencies:
       '@babel/code-frame': 7.27.1
       '@babel/generator': 7.28.5
@@ -1718,7 +1701,7 @@ snapshots:
       '@babel/parser': 7.28.5
       '@babel/template': 7.27.2
       '@babel/types': 7.28.5
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@7.2.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -1809,9 +1792,7 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
-  '@fontsource-variable/martian-mono@5.3.0': {}
-
-  '@fontsource-variable/space-grotesk@5.3.0': {}
+  '@fontsource-variable/archivo@5.3.0': {}
 
   '@fontsource/ibm-plex-mono@5.3.0': {}
 
@@ -1976,14 +1957,6 @@ snapshots:
 
   '@tanstack/query-core@5.90.12': {}
 
-  '@tanstack/query-devtools@5.91.1': {}
-
-  '@tanstack/react-query-devtools@5.91.1(@tanstack/react-query@5.90.12(react@19.2.1))(react@19.2.1)':
-    dependencies:
-      '@tanstack/query-devtools': 5.91.1
-      '@tanstack/react-query': 5.90.12(react@19.2.1)
-      react: 19.2.1
-
   '@tanstack/react-query@5.90.12(react@19.2.1)':
     dependencies:
       '@tanstack/query-core': 5.90.12
@@ -2027,11 +2000,11 @@ snapshots:
     dependencies:
       csstype: 3.2.3
 
-  '@vitejs/plugin-react@5.1.2(rolldown-vite@7.2.5(@types/node@24.10.2)(sass@1.95.0))':
+  '@vitejs/plugin-react@5.1.2(rolldown-vite@7.2.5(@types/node@24.10.2)(sass@1.95.0))(supports-color@7.2.0)':
     dependencies:
-      '@babel/core': 7.28.5
-      '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.5)
-      '@babel/plugin-transform-react-jsx-source': 7.27.1(@babel/core@7.28.5)
+      '@babel/core': 7.28.5(supports-color@7.2.0)
+      '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.5(supports-color@7.2.0))
+      '@babel/plugin-transform-react-jsx-source': 7.27.1(@babel/core@7.28.5(supports-color@7.2.0))
       '@rolldown/pluginutils': 1.0.0-beta.53
       '@types/babel__core': 7.20.5
       react-refresh: 0.18.0
@@ -2060,9 +2033,9 @@ snapshots:
 
   asynckit@0.4.0: {}
 
-  axios@1.13.2:
+  axios@1.13.2(debug@4.4.3(supports-color@7.2.0)):
     dependencies:
-      follow-redirects: 1.15.11
+      follow-redirects: 1.15.11(debug@4.4.3(supports-color@7.2.0))
       form-data: 4.0.5
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
@@ -2147,9 +2120,11 @@ snapshots:
 
   csstype@3.2.3: {}
 
-  debug@4.4.3:
+  debug@4.4.3(supports-color@7.2.0):
     dependencies:
       ms: 2.1.3
+    optionalDependencies:
+      supports-color: 7.2.0
 
   delayed-stream@1.0.0: {}
 
@@ -2233,7 +2208,9 @@ snapshots:
 
   flatted@3.3.3: {}
 
-  follow-redirects@1.15.11: {}
+  follow-redirects@1.15.11(debug@4.4.3(supports-color@7.2.0)):
+    optionalDependencies:
+      debug: 4.4.3(supports-color@7.2.0)
 
   form-data@4.0.5:
     dependencies:
@@ -2639,37 +2616,37 @@ snapshots:
     dependencies:
       ansi-regex: 5.0.1
 
-  stylelint-config-prettier-scss@1.0.0(stylelint@16.26.1(typescript@5.9.3)):
+  stylelint-config-prettier-scss@1.0.0(stylelint@16.26.1(supports-color@7.2.0)(typescript@5.9.3)):
     dependencies:
-      stylelint: 16.26.1(typescript@5.9.3)
+      stylelint: 16.26.1(supports-color@7.2.0)(typescript@5.9.3)
 
-  stylelint-config-recommended-scss@16.0.2(postcss@8.5.6)(stylelint@16.26.1(typescript@5.9.3)):
+  stylelint-config-recommended-scss@16.0.2(postcss@8.5.6)(stylelint@16.26.1(supports-color@7.2.0)(typescript@5.9.3)):
     dependencies:
       postcss-scss: 4.0.9(postcss@8.5.6)
-      stylelint: 16.26.1(typescript@5.9.3)
-      stylelint-config-recommended: 17.0.0(stylelint@16.26.1(typescript@5.9.3))
-      stylelint-scss: 6.13.0(stylelint@16.26.1(typescript@5.9.3))
+      stylelint: 16.26.1(supports-color@7.2.0)(typescript@5.9.3)
+      stylelint-config-recommended: 17.0.0(stylelint@16.26.1(supports-color@7.2.0)(typescript@5.9.3))
+      stylelint-scss: 6.13.0(stylelint@16.26.1(supports-color@7.2.0)(typescript@5.9.3))
     optionalDependencies:
       postcss: 8.5.6
 
-  stylelint-config-recommended@17.0.0(stylelint@16.26.1(typescript@5.9.3)):
+  stylelint-config-recommended@17.0.0(stylelint@16.26.1(supports-color@7.2.0)(typescript@5.9.3)):
     dependencies:
-      stylelint: 16.26.1(typescript@5.9.3)
+      stylelint: 16.26.1(supports-color@7.2.0)(typescript@5.9.3)
 
-  stylelint-config-standard-scss@16.0.0(postcss@8.5.6)(stylelint@16.26.1(typescript@5.9.3)):
+  stylelint-config-standard-scss@16.0.0(postcss@8.5.6)(stylelint@16.26.1(supports-color@7.2.0)(typescript@5.9.3)):
     dependencies:
-      stylelint: 16.26.1(typescript@5.9.3)
-      stylelint-config-recommended-scss: 16.0.2(postcss@8.5.6)(stylelint@16.26.1(typescript@5.9.3))
-      stylelint-config-standard: 39.0.1(stylelint@16.26.1(typescript@5.9.3))
+      stylelint: 16.26.1(supports-color@7.2.0)(typescript@5.9.3)
+      stylelint-config-recommended-scss: 16.0.2(postcss@8.5.6)(stylelint@16.26.1(supports-color@7.2.0)(typescript@5.9.3))
+      stylelint-config-standard: 39.0.1(stylelint@16.26.1(supports-color@7.2.0)(typescript@5.9.3))
     optionalDependencies:
       postcss: 8.5.6
 
-  stylelint-config-standard@39.0.1(stylelint@16.26.1(typescript@5.9.3)):
+  stylelint-config-standard@39.0.1(stylelint@16.26.1(supports-color@7.2.0)(typescript@5.9.3)):
     dependencies:
-      stylelint: 16.26.1(typescript@5.9.3)
-      stylelint-config-recommended: 17.0.0(stylelint@16.26.1(typescript@5.9.3))
+      stylelint: 16.26.1(supports-color@7.2.0)(typescript@5.9.3)
+      stylelint-config-recommended: 17.0.0(stylelint@16.26.1(supports-color@7.2.0)(typescript@5.9.3))
 
-  stylelint-scss@6.13.0(stylelint@16.26.1(typescript@5.9.3)):
+  stylelint-scss@6.13.0(stylelint@16.26.1(supports-color@7.2.0)(typescript@5.9.3)):
     dependencies:
       css-tree: 3.1.0
       is-plain-object: 5.0.0
@@ -2679,9 +2656,9 @@ snapshots:
       postcss-resolve-nested-selector: 0.1.6
       postcss-selector-parser: 7.1.1
       postcss-value-parser: 4.2.0
-      stylelint: 16.26.1(typescript@5.9.3)
+      stylelint: 16.26.1(supports-color@7.2.0)(typescript@5.9.3)
 
-  stylelint@16.26.1(typescript@5.9.3):
+  stylelint@16.26.1(supports-color@7.2.0)(typescript@5.9.3):
     dependencies:
       '@csstools/css-parser-algorithms': 3.0.5(@csstools/css-tokenizer@3.0.4)
       '@csstools/css-syntax-patches-for-csstree': 1.0.20
@@ -2694,7 +2671,7 @@ snapshots:
       cosmiconfig: 9.0.0(typescript@5.9.3)
       css-functions-list: 3.2.3
       css-tree: 3.1.0
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@7.2.0)
       fast-glob: 3.3.3
       fastest-levenshtein: 1.0.16
       file-entry-cache: 11.1.1
@@ -2773,9 +2750,9 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  vite-tsconfig-paths@5.1.4(rolldown-vite@7.2.5(@types/node@24.10.2)(sass@1.95.0))(typescript@5.9.3):
+  vite-tsconfig-paths@5.1.4(rolldown-vite@7.2.5(@types/node@24.10.2)(sass@1.95.0))(supports-color@7.2.0)(typescript@5.9.3):
     dependencies:
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@7.2.0)
       globrex: 0.1.2
       tsconfck: 3.1.6(typescript@5.9.3)
     optionalDependencies:

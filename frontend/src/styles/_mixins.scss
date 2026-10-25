@@ -42,81 +42,65 @@ $breakpoints: (
   border: 0;
 }
 
-@mixin plate-type($size: $font-size-2xs) {
-  font-family: $font-plate;
-  font-size: $size;
-  font-weight: $font-weight-normal;
-  letter-spacing: $tracking-plate;
-  text-transform: uppercase;
-  line-height: $line-height-tight;
-}
-
-@mixin label-type($size: $font-size-xs) {
-  font-family: $font-mono;
-  font-size: $size;
-  letter-spacing: $tracking-label;
-  text-transform: uppercase;
-  line-height: $line-height-tight;
-}
-
 @mixin display-type($size: $font-size-display) {
   font-family: $font-display;
   font-size: $size;
-  font-weight: $font-weight-bold;
-  letter-spacing: $tracking-display;
+  font-weight: $font-weight-black;
+  letter-spacing: $tracking-tight;
   line-height: $line-height-flat;
 }
 
+@mixin heading-type($size: $font-size-2xl) {
+  font-family: $font-sans;
+  font-size: $size;
+  font-weight: $font-weight-bold;
+  letter-spacing: $tracking-flat;
+  line-height: $line-height-tight;
+}
+
+// Small text is sentence case here on purpose. Uppercase is reserved for
+// the wordmark and status words.
+@mixin label-type($size: $font-size-xs) {
+  font-family: $font-sans;
+  font-size: $size;
+  font-weight: $font-weight-medium;
+  letter-spacing: $tracking-open;
+  line-height: $line-height-normal;
+}
+
+@mixin data-type($size: $font-size-sm) {
+  font-family: $font-mono;
+  font-size: $size;
+  font-variant-numeric: tabular-nums;
+  line-height: $line-height-normal;
+}
+
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 3px solid $color-field;
+    outline-offset: 2px;
+  }
+}
+
+@mixin on-field {
+  color: $color-on-field;
+}
+
+// Aliases for modules that have not been ported yet.
+@mixin plate-type($size: $font-size-2xs) {
+  font-family: $font-sans;
+  font-size: $size;
+  font-weight: $font-weight-semibold;
+  letter-spacing: $tracking-open;
+  text-transform: uppercase;
+  line-height: $line-height-tight;
+}
+
 @mixin inverted {
-  color: $color-paper-lit;
+  color: $color-panel;
   background-color: $color-ink;
 }
 
-@mixin corner-ticks($inset: 0, $length: $tick-size, $color: $color-ink) {
-  position: relative;
-
-  &::before,
-  &::after {
-    position: absolute;
-    width: $length;
-    height: $length;
-    content: '';
-    pointer-events: none;
-  }
-
-  &::before {
-    top: $inset;
-    left: $inset;
-    border-top: 1px solid $color;
-    border-left: 1px solid $color;
-  }
-
-  &::after {
-    right: $inset;
-    bottom: $inset;
-    border-right: 1px solid $color;
-    border-bottom: 1px solid $color;
-  }
-}
-
-@mixin dotted-field($color: $color-ink-ghost, $step: 6px) {
-  background-image: radial-gradient($color 0.5px, transparent 0.5px);
-  background-size: $step $step;
-}
-
-@mixin ruled-field($color: $color-rule-faint, $step: 4px) {
-  background-image: repeating-linear-gradient(
-    90deg,
-    $color 0,
-    $color 1px,
-    transparent 1px,
-    transparent $step
-  );
-}
-
 @mixin focus-plate {
-  &:focus-visible {
-    outline: 2px solid $color-signal;
-    outline-offset: 2px;
-  }
+  @include focus-ring;
 }

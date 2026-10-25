@@ -16,9 +16,6 @@ import {
   RULE_CHECK_MUTED,
   RULING,
   SESSION_ID_HEAD,
-  SEVERITY_MAX_WEIGHT,
-  SEVERITY_SCALE_OFFSET,
-  SEVERITY_WEIGHT,
 } from '@/config'
 import { ApiError } from '@/core/api/errors'
 import {
@@ -31,14 +28,19 @@ import {
 
 import styles from './arena.module.scss'
 
-function numeral(value: number): string {
-  return String(value).padStart(NUMERAL_PAD, '0')
+type NodeState = 'off' | 'on' | 'pass' | 'hit' | 'stop' | 'held'
+
+const NODE_LABEL: Record<NodeState, string> = {
+  off: COPY.SIGNAL_OFF,
+  on: COPY.SIGNAL_ON,
+  pass: COPY.SIGNAL_PASS,
+  hit: COPY.SIGNAL_HIT,
+  stop: COPY.SIGNAL_STOP,
+  held: COPY.UNREACHED,
 }
 
-function severityWidth(weighting: string): string {
-  const weight = SEVERITY_WEIGHT[weighting as keyof typeof SEVERITY_WEIGHT] ?? 0
-  const span = SEVERITY_MAX_WEIGHT + SEVERITY_SCALE_OFFSET
-  return `${((weight + SEVERITY_SCALE_OFFSET) / span) * 100}%`
+function numeral(value: number): string {
+  return String(value).padStart(NUMERAL_PAD, '0')
 }
 
 function attemptMessage(error: Error | null): string {
@@ -50,7 +52,14 @@ function firedAlerts(result: AttemptResponse): Alert[] {
   return result.alerts.filter((alert) => alert.rule !== RULE_CHECK_MUTED)
 }
 
-function LevelPlate({
+function refused(result: AttemptResponse): boolean {
+  return (
+    result.inbound_ruling === RULING.REFUSE ||
+    result.outbound_ruling === RULING.REFUSE
+  )
+}
+
+function LevelButton({
   level,
   selected,
   onSelect,
@@ -62,17 +71,18 @@ function LevelPlate({
   return (
     <button
       type="button"
-      className={styles.levelPlate}
+      className={styles.level}
       data-selected={selected}
+      aria-pressed={selected}
       onClick={() => onSelect(level.number)}
     >
-      <span className={styles.levelNumber}>{numeral(level.number)}</span>
-      <span className={styles.levelTitle}>{level.title}</span>
-      <span className={styles.levelBars} aria-hidden="true">
+      <span className={styles.levelNum}>{numeral(level.number)}</span>
+      <span className={styles.levelName}>{level.title}</span>
+      <span className={styles.pips} aria-hidden="true">
         {CHECK_ORDER.map((check) => (
           <span
             key={check}
-            className={styles.levelBar}
+            className={styles.pip}
             data-on={level.active_checks.includes(check)}
           />
         ))}
@@ -81,36 +91,95 @@ function LevelPlate({
   )
 }
 
-function LayerRail({ level }: { level: Level }): React.ReactElement {
+function SignalPath({
+  level,
+  result,
+}: {
+  level: Level
+  result?: AttemptResponse
+}): React.ReactElement {
+  const fired = new Set<string>(
+    (result?.alerts ?? [])
+      .filter((alert) => alert.rule !== RULE_CHECK_MUTED)
+      .map((alert) => alert.check)
+  )
+  const muted = new Set<string>(
+    (result?.alerts ?? [])
+      .filter((alert) => alert.rule === RULE_CHECK_MUTED)
+      .map((alert) => alert.check)
+  )
+  const stopped = result !== undefined && refused(result)
+  const firstHit = CHECK_ORDER.find((check) => fired.has(check)) ?? null
+  const stopIndex =
+    stopped && firstHit !== null ? CHECK_ORDER.indexOf(firstHit) : -1
+
+  const stateOf = (check: string, index: number): NodeState => {
+    const active = level.active_checks.includes(check)
+    if (!active || muted.has(check)) {
+      return 'off'
+    }
+    if (stopIndex >= 0 && index > stopIndex) {
+      return 'held'
+    }
+    if (fired.has(check)) {
+      return index === stopIndex ? 'stop' : 'hit'
+    }
+    return result === undefined ? 'on' : 'pass'
+  }
+
+  const onCount = level.active_checks.length
+
+  return (
+    <section className={styles.signal} data-refused={stopped}>
+      <div className={styles.sectionHead}>
+        <h2 className={styles.heading}>{COPY.SIGNAL_HEADING}</h2>
+        <span className={styles.meta}>
+          {onCount} of {CHECK_ORDER.length} {COPY.SIGNAL_ON}
+        </span>
+      </div>
+
+      <ol className={styles.path}>
+        {CHECK_ORDER.map((check, index) => {
+          const state = stateOf(check, index)
+          return (
+            <li key={check} className={styles.node} data-state={state}>
+              <span className={styles.lamp} aria-hidden="true" />
+              <span className={styles.nodeName}>{check}</span>
+              <span className={styles.nodeState}>{NODE_LABEL[state]}</span>
+            </li>
+          )
+        })}
+      </ol>
+
+      <p className={styles.pathNote}>
+        {onCount === 0
+          ? COPY.SIGNAL_NONE
+          : result === undefined
+            ? COPY.SIGNAL_WAITING
+            : stopped
+              ? COPY.SIGNAL_REFUSED.replace('{check}', firstHit ?? '')
+              : COPY.SIGNAL_PASSED}
+      </p>
+    </section>
+  )
+}
+
+function LevelNote({ level }: { level: Level }): React.ReactElement {
   const off = CHECK_ORDER.filter((check) => !level.active_checks.includes(check))
 
   return (
-    <section className={styles.rail}>
-      <h2 className={styles.railHeading}>{COPY.ACTIVE_CHECKS}</h2>
-      <ul className={styles.railList}>
-        {CHECK_ORDER.map((check, index) => (
-          <li
-            key={check}
-            className={styles.railItem}
-            data-active={level.active_checks.includes(check)}
-          >
-            <span className={styles.railIndex}>{numeral(index + 1)}</span>
-            <span className={styles.railName}>{check}</span>
-          </li>
-        ))}
-      </ul>
-      {level.active_checks.length === 0 && (
-        <p className={styles.note} data-tone="loud">
-          {COPY.NO_ACTIVE_CHECKS}
+    <section className={styles.levelNote}>
+      <div className={styles.sectionHead}>
+        <h2 className={styles.heading}>{COPY.TEACHES_LABEL}</h2>
+      </div>
+      <p className={styles.teaches}>{level.teaches}</p>
+      {off.length > 0 && (
+        <p className={styles.offList}>
+          {COPY.DISABLED_PREFIX}: {off.join(', ')}
         </p>
-      )}
-      {off.length > 0 && level.active_checks.length > 0 && (
-        <p className={styles.note}>{COPY.DISABLED_NOTICE}</p>
       )}
       {level.number === ARENA.BOUNTY_LEVEL && (
-        <p className={styles.note} data-tone="loud">
-          {COPY.BOUNTY_NOTE}
-        </p>
+        <p className={styles.bounty}>{COPY.BOUNTY_NOTE}</p>
       )}
     </section>
   )
@@ -126,9 +195,9 @@ function CensusCell({
   hot: boolean
 }): React.ReactElement {
   return (
-    <div className={styles.censusCell} data-hot={hot}>
-      <span className={styles.censusValue}>{value}</span>
-      <span className={styles.censusLabel}>{label}</span>
+    <div className={styles.cell} data-hot={hot}>
+      <span className={styles.cellValue}>{value}</span>
+      <span className={styles.cellLabel}>{label}</span>
     </div>
   )
 }
@@ -150,19 +219,20 @@ function Specimen({
 
   return (
     <section className={styles.specimen}>
-      <div className={styles.specimenHead}>
-        <h2 className={styles.plateHeading}>{COPY.SPECIMEN_HEADING}</h2>
+      <div className={styles.sectionHead}>
+        <h2 className={styles.heading}>{COPY.SPECIMEN_HEADING}</h2>
         <button
           type="button"
-          className={styles.ghostButton}
+          className={styles.textButton}
           data-on={revealed}
+          aria-pressed={revealed}
           onClick={() => setRevealed((value) => !value)}
         >
           {revealed ? COPY.REVEAL_OFF : COPY.REVEAL_ON}
         </button>
       </div>
 
-      <div className={styles.censusGrid}>
+      <div className={styles.census}>
         <CensusCell
           label={COPY.CENSUS.GLYPHS}
           value={counts.glyphs}
@@ -194,7 +264,7 @@ function Specimen({
       {ticket.length === 0 ? (
         <p className={styles.note}>{COPY.SPECIMEN_EMPTY}</p>
       ) : (
-        <p className={styles.note} data-tone={hidden > 0 ? 'loud' : 'calm'}>
+        <p className={styles.note} data-loud={hidden > 0}>
           {hidden > 0 ? COPY.CENSUS_DIRTY : COPY.CENSUS_CLEAN}
         </p>
       )}
@@ -228,23 +298,17 @@ function Findings({ alerts }: { alerts: Alert[] }): React.ReactElement {
   }
 
   return (
-    <ul className={styles.findings}>
+    <ul className={styles.alerts}>
       {alerts.map((alert, index) => (
         <li
           key={`${index}-${alert.check}-${alert.rule}`}
-          className={styles.finding}
+          className={styles.alert}
           data-hard={alert.hard}
         >
-          <span className={styles.findingLayer}>{alert.check}</span>
-          <span className={styles.findingRule}>{alert.rule}</span>
-          <span className={styles.findingTrack}>
-            <span
-              className={styles.findingFill}
-              style={{ width: severityWidth(alert.weight) }}
-            />
-          </span>
-          <span className={styles.findingSeverity}>{alert.weight}</span>
-          <span className={styles.findingFlag}>
+          <span className={styles.alertCheck}>{alert.check}</span>
+          <span className={styles.alertRule}>{alert.rule}</span>
+          <span className={styles.alertWeight}>{alert.weight}</span>
+          <span className={styles.alertFlag}>
             {alert.hard ? COPY.HARD_MARK : ''}
           </span>
         </li>
@@ -253,69 +317,66 @@ function Findings({ alerts }: { alerts: Alert[] }): React.ReactElement {
   )
 }
 
-function Verdict({ result }: { result: AttemptResponse }): React.ReactElement {
+function Result({ result }: { result: AttemptResponse }): React.ReactElement {
   const fired = firedAlerts(result)
 
   return (
-    <section className={styles.verdict}>
-      <div className={styles.verdictHead}>
-        <h2 className={styles.plateHeading}>{COPY.VERDICT_HEADING}</h2>
-        <span className={styles.attempts}>
+    <section
+      className={styles.result}
+      data-refused={refused(result)}
+      aria-live="polite"
+    >
+      <div className={styles.sectionHead}>
+        <h2 className={styles.heading}>{COPY.RESULT_HEADING}</h2>
+        <span className={styles.meta}>
           {COPY.ATTEMPTS_LABEL} {numeral(result.attempts)}
         </span>
       </div>
 
-      <dl className={styles.decisions}>
-        <div className={styles.decision}>
-          <dt className={styles.decisionKey}>{COPY.REQUEST_LABEL}</dt>
-          <dd
-            className={styles.decisionValue}
-            data-decision={result.inbound_ruling}
-          >
-            {result.inbound_ruling}
-          </dd>
+      <div className={styles.rulings}>
+        <div className={styles.ruling} data-ruling={result.inbound_ruling}>
+          <span className={styles.rulingLabel}>{COPY.INBOUND_LABEL}</span>
+          <strong className={styles.rulingValue}>{result.inbound_ruling}</strong>
         </div>
-        <div className={styles.decision}>
-          <dt className={styles.decisionKey}>{COPY.EGRESS_LABEL}</dt>
-          <dd
-            className={styles.decisionValue}
-            data-decision={result.outbound_ruling ?? RULING.PERMIT}
-            data-unreached={result.outbound_ruling === null}
-          >
-            {result.outbound_ruling ?? COPY.EGRESS_UNREACHED}
-          </dd>
+        <div
+          className={styles.ruling}
+          data-ruling={result.outbound_ruling ?? 'none'}
+        >
+          <span className={styles.rulingLabel}>{COPY.OUTBOUND_LABEL}</span>
+          <strong className={styles.rulingValue}>
+            {result.outbound_ruling ?? COPY.UNREACHED}
+          </strong>
         </div>
-      </dl>
-
-      <h3 className={styles.subHeading}>{COPY.FINDINGS_HEADING}</h3>
-      <Findings alerts={fired} />
-
-      <div className={styles.seal} data-escaped={result.secret_escaped}>
-        <span className={styles.sealLabel}>{COPY.SECRET_LABEL}</span>
-        <span className={styles.sealText}>
-          {result.secret_escaped ? COPY.SECRET_ESCAPED : COPY.SECRET_CONTAINED}
-        </span>
       </div>
 
-      <section className={styles.agent}>
-        <h3 className={styles.subHeading}>{COPY.AGENT_HEADING}</h3>
-        <pre className={styles.agentText}>
-          {result.reply_text || COPY.AGENT_EMPTY}
-        </pre>
-        <h3 className={styles.subHeading}>{COPY.ACTION_HEADING}</h3>
-        {result.proposals.length === 0 ? (
-          <p className={styles.note}>{COPY.NO_ACTIONS}</p>
-        ) : (
-          <ul className={styles.actions}>
-            {result.proposals.map((call, index) => (
-              <li key={`${index}-${call.name}`} className={styles.action}>
-                <span className={styles.actionName}>{call.name}</span>
-                <span className={styles.actionArgs}>{call.args.join(', ')}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <div className={styles.seal} data-escaped={result.secret_escaped}>
+        <span className={styles.sealLabel}>{COPY.SECRET_STATUS_LABEL}</span>
+        <strong className={styles.sealValue}>
+          {result.secret_escaped ? COPY.SECRET_ESCAPED : COPY.SECRET_CONTAINED}
+        </strong>
+      </div>
+
+      <h3 className={styles.subHead}>{COPY.RULES_HEADING}</h3>
+      <Findings alerts={fired} />
+
+      <h3 className={styles.subHead}>{COPY.AGENT_HEADING}</h3>
+      <pre className={styles.agent}>{result.reply_text || COPY.AGENT_EMPTY}</pre>
+
+      <h3 className={styles.subHead}>{COPY.PROPOSALS_HEADING}</h3>
+      {result.proposals.length === 0 ? (
+        <p className={styles.note}>{COPY.NO_PROPOSALS}</p>
+      ) : (
+        <ul className={styles.proposals}>
+          {result.proposals.map((proposal, index) => (
+            <li key={`${index}-${proposal.name}`} className={styles.proposal}>
+              <span className={styles.proposalName}>{proposal.name}</span>
+              <span className={styles.proposalArgs}>
+                {proposal.args.join(', ')}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }
@@ -355,41 +416,39 @@ export function Component(): React.ReactElement {
   return (
     <div className={styles.page}>
       <header className={styles.masthead}>
-        <div className={styles.mastheadMain}>
-          <h1 className={styles.title}>{COPY.TITLE}</h1>
+        <div className={styles.brand}>
+          <h1 className={styles.wordmark}>{COPY.TITLE}</h1>
           <p className={styles.tagline}>{COPY.TAGLINE}</p>
         </div>
-        <dl className={styles.mastheadMeta}>
-          <div className={styles.metaRow}>
-            <dt className={styles.metaKey}>{COPY.SESSION_LABEL}</dt>
-            <dd className={styles.metaValue}>
-              {session.data?.session_id.slice(0, SESSION_ID_HEAD) ??
-                COPY.SESSION_PENDING}
+
+        <dl className={styles.stats}>
+          <div className={styles.stat}>
+            <dt className={styles.statLabel}>{COPY.SESSION_LABEL}</dt>
+            <dd className={styles.statValue}>
+              {session.data?.session_id.slice(0, SESSION_ID_HEAD) ?? COPY.PENDING}
             </dd>
           </div>
-          <div className={styles.metaRow}>
-            <dt className={styles.metaKey}>{COPY.SECRET_LABEL_SHORT}</dt>
-            <dd className={styles.metaValue}>
+          <div className={styles.stat}>
+            <dt className={styles.statLabel}>{COPY.SECRET_LABEL}</dt>
+            <dd className={styles.statValue}>
               {session.data === undefined
-                ? COPY.SESSION_PENDING
-                : `${session.data.secret_length} ${COPY.SECRET_UNIT}`}
+                ? COPY.PENDING
+                : `${session.data.secret_length} ${COPY.CHARS}`}
             </dd>
           </div>
-          <div className={styles.metaRow}>
-            <dt className={styles.metaKey}>{COPY.CONFIG_LABEL}</dt>
-            <dd className={styles.metaValue}>
+          <div className={styles.stat}>
+            <dt className={styles.statLabel}>{COPY.LEVELS_LABEL}</dt>
+            <dd className={styles.statValue}>
               {numeral(levels.data?.levels.length ?? 0)}
             </dd>
           </div>
         </dl>
-        <div className={styles.mastheadRule} />
       </header>
 
-      <section className={styles.config}>
-        <h2 className={styles.plateHeading}>{COPY.LEVEL_HEADING}</h2>
-        <nav className={styles.levels}>
+      <div className={styles.panel}>
+        <nav className={styles.levelBar} aria-label={COPY.LEVELS_HEADING}>
           {levels.data?.levels.map((entry) => (
-            <LevelPlate
+            <LevelButton
               key={entry.number}
               level={entry}
               selected={entry.number === level}
@@ -398,51 +457,62 @@ export function Component(): React.ReactElement {
           ))}
         </nav>
 
-        {current && (
-          <div className={styles.detail}>
-            <div className={styles.teaches}>
-              <span className={styles.teachesLabel}>{COPY.TEACHES_LABEL}</span>
-              <p className={styles.teachesText}>{current.teaches}</p>
-            </div>
-            <LayerRail level={current} />
-          </div>
-        )}
-      </section>
+        <div className={styles.desk}>
+          <section className={styles.work}>
+            <form className={styles.form} onSubmit={submit}>
+              <div className={styles.sectionHead}>
+                <h2 className={styles.heading}>{COPY.TICKET_HEADING}</h2>
+                <span className={styles.meta}>
+                  {ticket.length} / {ARENA.MAX_TICKET_CHARS}
+                </span>
+              </div>
+              <p className={styles.hint}>{COPY.TICKET_HINT}</p>
+              <textarea
+                id="ticket"
+                className={styles.textarea}
+                value={ticket}
+                maxLength={ARENA.MAX_TICKET_CHARS}
+                spellCheck={false}
+                aria-label={COPY.TICKET_HEADING}
+                onChange={(event) => setTicket(event.target.value)}
+              />
+              <div className={styles.controls}>
+                <button
+                  type="submit"
+                  className={styles.submit}
+                  disabled={!canSubmit}
+                >
+                  {attempt.isPending ? COPY.SUBMITTING : COPY.SUBMIT}
+                </button>
+                <span className={styles.levelTag}>
+                  {numeral(level)}
+                  {current ? ` / ${current.title}` : ''}
+                </span>
+              </div>
+            </form>
 
-      <form className={styles.form} onSubmit={submit}>
-        <div className={styles.formHead}>
-          <label className={styles.label} htmlFor="ticket">
-            {COPY.TICKET_LABEL}
-          </label>
-          <span className={styles.counter}>
-            {ticket.length} / {ARENA.MAX_TICKET_CHARS}
-          </span>
+            <Specimen
+              ticket={ticket}
+              sets={codepoints.data ?? FALLBACK_CODEPOINTS}
+            />
+          </section>
+
+          <aside className={styles.side}>
+            {current && <SignalPath level={current} result={attempt.data} />}
+            {current && <LevelNote level={current} />}
+
+            {attempt.isError && (
+              <p className={styles.error}>{attemptMessage(attempt.error)}</p>
+            )}
+
+            {attempt.data ? (
+              <Result result={attempt.data} />
+            ) : (
+              <p className={styles.awaiting}>{COPY.AWAITING}</p>
+            )}
+          </aside>
         </div>
-        <p className={styles.hint}>{COPY.TICKET_HINT}</p>
-        <textarea
-          id="ticket"
-          className={styles.textarea}
-          value={ticket}
-          maxLength={ARENA.MAX_TICKET_CHARS}
-          spellCheck={false}
-          onChange={(event) => setTicket(event.target.value)}
-        />
-        <button type="submit" className={styles.submit} disabled={!canSubmit}>
-          {attempt.isPending ? COPY.SUBMITTING : COPY.SUBMIT}
-        </button>
-      </form>
-
-      <Specimen ticket={ticket} sets={codepoints.data ?? FALLBACK_CODEPOINTS} />
-
-      {attempt.isError && (
-        <p className={styles.error}>{attemptMessage(attempt.error)}</p>
-      )}
-
-      {attempt.data ? (
-        <Verdict result={attempt.data} />
-      ) : (
-        <p className={styles.awaiting}>{COPY.AWAITING}</p>
-      )}
+      </div>
     </div>
   )
 }
